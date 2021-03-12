@@ -8,4 +8,9 @@
 #include <error_handling.h>
 #include <stdlib.h>
 
-int main() { return 0; }
+#include "utils1.h"
+
+int main() {
+    e();
+    return 0;
+}

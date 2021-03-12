@@ -38,7 +38,7 @@
  * @param assertion The condition (a boolean expression is evaluated to 0 or 1)
  * @param msg The message to show
  */
-static inline void CERR(bint assertion, char* msg) {
+static inline void CERR(u_int8_t assertion, char *msg) {
     if (assertion) {
         fprintf(stderr, "(%s, %d): ", __FILE__, __LINE__);
         perror(msg);
@@ -49,7 +49,7 @@ static inline void CERR(bint assertion, char* msg) {
  * @brief Print the debug message (debug mode must be active)
  * @param msg The message
  */
-static inline void DEBUG_MSG(char* msg) {
+static inline void DEBUG_MSG(char *msg) {
     if (DEBUG_MODE) { fprintf(stderr, "%s\n", msg); }
 }
 

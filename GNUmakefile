@@ -1,17 +1,72 @@
 # Copyright 2021 Grama Nicolae
-# The linux makefile
+# The linux makefile.
+# It follows this template - https://gist.github.com/keeferrourke/fe72476a8dd8c4c02ff18eaed74e1de0
 
-# Compilation variables
+# Project directories
+SRC_DIR = src/
+BIN_DIR = bin/
+LIB_DIR = lib/
+
+# Executable name and path
+BIN_NAME = so-cpp
+EXE = $(addprefix $(BIN_DIR), $(BIN_NAME))
+
+# Libraries information (build, components)
+LIB_MAKE_BUILD = GNUmakefile all
+LIB_MAKE_CLEAN = GNUmakefile clean
+LIBS = -ldata
+
+# Compilation parameters
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c11
-SRC = src/main.c
-OBJ = $(SRC:.cpp=bin/.o)
-EXE = bin/so-cpp
-LIB = lib
+CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c99 -I$(LIB_DIR)
+OBJS = src/main.o src/utils1.o
 
 # Code Styling
-CSFILES = */*.c */*.h */*/.c */*/.h
+CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
 
-build: $(OBJ)
-	@$(CC) -o $(EXE) $^ $(CFLAGS) -I$(LIB) ||:
+# Build the program
+all: build_libs build
+	$(info Deleting object files and libraries...)
+	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
+	@rm -rf $(OBJS)
 
+# Compile the executable
+build: $(OBJS)
+	$(info Building executable...)
+	@mkdir -p $(BIN_DIR)
+	@$(CC) -o $(EXE) $^ $(CFLAGS) $(LIBS) -L$(LIB_DIR)
+
+# Build the libraries
+build_libs:
+	$(info Building libraries...)
+	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_BUILD)
+	$(info Building object files...)
+
+# Create the object files
+%.o: %.c
+	@$(CC) -o $@ -c $< $(CFLAGS)
+
+# Run the binary
+run: clean all
+	./bin/so-cpp
+
+# Automatic coding style, in my personal style
+beauty:
+	@cp code_styles/personal .clang-format
+	@clang-format -i -style=file $(CSFILES)
+	@rm -f .clang-format
+	
+# Automatic coding style, using the required coding style
+beauty_req:
+	@cp code_styles/linux .clang-format
+	@clang-format -i -style=file $(CSFILES)
+	@rm -f .clang-format
+
+# Remove object files and executables
+clean:
+	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
+	@rm -rf $(BIN_DIR) $(OBJS)
+
+# Debuggin makefile
+print-% :
+	@echo $* = $($*)

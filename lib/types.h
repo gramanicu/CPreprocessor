@@ -10,11 +10,7 @@
 
 #include <sys/types.h>
 
-#define lint u_int64_t    // Long Int
-#define uint u_int32_t    // Unsigned Int
-#define sint u_int16_t    // Short Int
-#define bint u_int8_t     // Byte Int
-
 #define uchar unsigned char
+#define string char*
 
 #endif    // TYPES_H

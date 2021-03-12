@@ -15,11 +15,11 @@
  * @param str The string to hash
  * @return unsigned long The hash
  */
-ulong hash_djb2(uchar *str) {
-    ulong hash = 5381;
-    uint c;
+u_int64_t hash_djb2(uchar *str) {
+    u_int64_t hash = 5381;
+    u_int32_t c;
 
-    while (c = *str++) {
+    while ((c = *str++)) {
         // hash * 33 + c
         hash = ((hash << 5) + hash) + c;
     }
@@ -33,11 +33,11 @@ ulong hash_djb2(uchar *str) {
  * @param str The string to hash
  * @return unsigned long The hash
  */
-ulong hash_sdbm(uchar *str) {
-    ulong hash = 0;
-    uint c;
+u_int64_t hash_sdbm(uchar *str) {
+    u_int64_t hash = 0;
+    u_int32_t c;
 
-    while (c = *str++) { hash = c + (hash << 6) + (hash << 16) - hash; }
+    while ((c = *str++)) { hash = c + (hash << 6) + (hash << 16) - hash; }
 
     return hash;
 }

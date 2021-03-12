@@ -1,7 +1,7 @@
 /**
  * @file hashmap.h
  * @author Grama Nicolae (gramanicu@gmail.com)
- * @brief The definition used for the hashtable
+ * @brief The definitions used for the hashtable
  * @copyright Copyright (c) 2021
  */
 
@@ -21,6 +21,7 @@ typedef struct _Bucket {
     // insert
     // remove
     // clear
+    int notempty;
 } Bucket;
 
 /**
