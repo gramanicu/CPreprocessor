@@ -1,7 +1,7 @@
 /**
  * @file pair.c
  * @author Grama Nicolae (gramanicu@gmail.com)
- * @brief The implementation of the pair data structures
+ * @brief The implementation of the pair data structure
  * @copyright Copyright (c) 2021
  */
 

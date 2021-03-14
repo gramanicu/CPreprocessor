@@ -19,10 +19,13 @@ LIBS = -ldata
 # Compilation parameters
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c99 -I$(LIB_DIR)
-OBJS = src/main.o src/utils1.o
+OBJS = src/main.o
 
 # Code Styling
 CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
+
+# Memory check params
+MFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
 
 # Build the program
 all: build_libs build
@@ -48,19 +51,23 @@ build_libs:
 
 # Run the binary
 run: clean all
-	./bin/so-cpp
+	./$(EXE)
+
+	
+# Checks the memory for leaks
+memory:clean all
+	valgrind $(MFLAGS) ./$(EXE)
 
 # Automatic coding style, in my personal style
 beauty:
 	@cp code_styles/personal .clang-format
 	@clang-format -i -style=file $(CSFILES)
-	@rm -f .clang-format
 	
 # Automatic coding style, using the required coding style
 beauty_req:
 	@cp code_styles/linux .clang-format
 	@clang-format -i -style=file $(CSFILES)
-	@rm -f .clang-format
+	@cp code_styles/personal .clang-format
 
 # Remove object files and executables
 clean:

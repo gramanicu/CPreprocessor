@@ -5,12 +5,8 @@
  * @copyright Copyright (c) 2021
  */
 
+#include <data.h>
 #include <error_handling.h>
 #include <stdlib.h>
 
-#include "utils1.h"
-
-int main() {
-    e();
-    return 0;
-}
+int main() { return 0; }
