@@ -7,7 +7,7 @@ LIB_OBJ_DATA = pair.o list.o hashmap.o
 
 # Compilation parameters
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c99 -I.
+CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c99 -I. -DDEBUG
 
 all: build_libdata
 

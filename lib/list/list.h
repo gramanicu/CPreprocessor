@@ -8,15 +8,18 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <error_handling.h>
 #include <pair/pair.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <types.h>
 
-// A "constructor for the list"
+// A "constructor" for the list
 #define INIT_PAIRLIST                                               \
     {                                                               \
         0, 0, pairlist_search, pairlist_push_back, pairlist_remove, \
-            pairlist_clear                                          \
+            pairlist_clear, pairlist_print                          \
     }
 
 typedef struct PairListElem {
@@ -27,12 +30,13 @@ typedef struct PairListElem {
 
 typedef struct PairList {
     PairListElem *_head;
-    int _size;
+    u_int32_t _size;
 
-    StringsPair (*search)(struct PairList *const this, string key);
+    void (*search)(struct PairList *const this, string key, StringsPair *pair);
     void (*insert)(struct PairList *const this, StringsPair pair);
     void (*remove)(struct PairList *const this, string key);
     void (*clear)(struct PairList *const this);
+    void (*print)(struct PairList *const this);
 } PairList;
 
 // -- PairList "Methods" --
@@ -40,11 +44,12 @@ typedef struct PairList {
 /**
  * @brief Search for a strings pair in the list.
  * @param this The list this function is attached to
- * @param key The key to search for
- * @return StringsPair The StringsPair with the required key. Returns a empty
+ * @param key The key of the searched pair
+ * @param pair The "returned" StringsPair with the required key. Returns a empty
  * pair if the key is not found
  */
-StringsPair pairlist_search(struct PairList *const this, string key);
+void pairlist_search(struct PairList *const this, string key,
+                     StringsPair *pair);
 
 /**
  * @brief Insert a pair at the back of the list.
@@ -65,5 +70,11 @@ void pairlist_remove(struct PairList *const this, string key);
  * @param this The list this function is attached to
  */
 void pairlist_clear(struct PairList *const this);
+
+/**
+ * @brief Print the data inside the list
+ * @param this The list this function is attached to
+ */
+void pairlist_print(struct PairList *const this);
 
 #endif    // LIST_H

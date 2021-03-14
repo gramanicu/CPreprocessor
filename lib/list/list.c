@@ -10,31 +10,37 @@
 
 #include "list.h"
 
-StringsPair pairlist_search(struct PairList *const this, string key) {
+void pairlist_search(struct PairList *const this, string key,
+                     StringsPair *pair) {
     PairListElem *curr = this->_head;
 
     if (this->_size == 0) {
         // Return empty pair if the key is not found (empty list)
-        return make_spair("", "");
+        make_spair("", "", pair);
+        return;
     }
 
     while (curr != 0) {
-        if (curr->data.first == key) { return curr->data; }
+        if (strcmp(curr->data.first, key) == 0) {
+            copy_spair(curr->data, pair);
+            return;
+        }
         curr = curr->next;
     }
 
     // Return empty pair if the key is not found
-    return make_spair("", "");
+    make_spair("", "", pair);
 }
 
 void pairlist_push_back(struct PairList *const this, StringsPair pair) {
-    PairListElem *newNode = malloc(sizeof(PairListElem));
-    newNode->data = pair;
-    newNode->next = 0;
-    newNode->prev = 0;
+    PairListElem *new_node = malloc(sizeof(PairListElem));
+
+    copy_spair(pair, &new_node->data);
+    new_node->next = 0;
+    new_node->prev = 0;
 
     if (this->_size == 0) {
-        this->_head = newNode;
+        this->_head = new_node;
         this->_size++;
         return;
     }
@@ -43,8 +49,8 @@ void pairlist_push_back(struct PairList *const this, StringsPair pair) {
     while (curr->next != 0) { curr = curr->next; }
 
     // The next is empty, so insert the new value there
-    curr->next = newNode;
-    newNode->prev = curr;
+    curr->next = new_node;
+    new_node->prev = curr;
     this->_size++;
 }
 
@@ -56,16 +62,17 @@ void pairlist_remove(struct PairList *const this, string key) {
         return;
     }
 
-    if (this->_head->data.first == key) {
+    if (strcmp(this->_head->data.first, key) == 0) {
         // The head must be removed
         this->_head = curr->next;
+        clear_spair(&curr->data);
         free(curr);
         this->_size--;
         return;
     }
 
     while (curr != 0) {
-        if (curr->data.first == key) {
+        if (strcmp(curr->data.first, key) == 0) {
             // Remove the pair
             PairListElem *next = curr->next;
             PairListElem *prev = curr->prev;
@@ -73,6 +80,7 @@ void pairlist_remove(struct PairList *const this, string key) {
             if (next != 0) { next->prev = curr->prev; }
             if (prev != 0) { prev->next = curr->next; }
 
+            clear_spair(&curr->data);
             free(curr);
             this->_size--;
             return;
@@ -86,10 +94,21 @@ void pairlist_clear(struct PairList *const this) {
 
     while (curr != 0) {
         PairListElem *next = curr->next;
+        clear_spair(&curr->data);
         free(curr);
         curr = next;
     }
 
     this->_size = 0;
     this->_head = 0;
+}
+
+void pairlist_print(struct PairList *const this) {
+    PairListElem *curr = this->_head;
+
+    while (curr != 0) {
+        printf("{ %s - %s } ", curr->data.first, curr->data.second);
+        curr = curr->next;
+    }
+    printf("\n");
 }
