@@ -21,6 +21,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -I$(LIB_DIR) -DDEBUG
 OBJS = src/main.o
 
+# Test arguments
+TEST_ARGS = -Isrc -I lib/ -DDEBUG -DDEBUG1=1 -D LINUX -D LINUX=1 -o out.txt in.txt
+
 # Code Styling
 CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
 
@@ -51,12 +54,12 @@ build_libs:
 
 # Run the binary
 run: clean all
-	./$(EXE)
+	./$(EXE) $(TEST_ARGS)
 
 	
 # Checks the memory for leaks
 memory:clean all
-	valgrind $(MFLAGS) ./$(EXE)
+	valgrind $(MFLAGS) ./$(EXE) $(TEST_ARGS)
 
 # Automatic coding style, in my personal style
 beauty:

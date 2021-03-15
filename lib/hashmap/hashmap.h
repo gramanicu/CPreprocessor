@@ -14,9 +14,9 @@
 #include <stdlib.h>
 #include <types.h>
 
-#define HASHMAP_SIZE_START 128 /* Initial size */
-#define HASHMAP_FILL_MAX 50    /* Max fill percent */
-#define HASHMAP_EXP_FACT 2     /* Expansion factor */
+#define HASHMAP_SIZE_START 16 /* Initial size */
+#define HASHMAP_FILL_MAX 50   /* Max fill percent */
+#define HASHMAP_EXP_FACT 2    /* Expansion factor */
 
 /* A "constructor" for the hashmap */
 #define INIT_HASHMAP                                                        \
