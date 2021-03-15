@@ -18,7 +18,7 @@ u_int64_t hash_djb2(string str) {
     u_int32_t c;
 
     while ((c = *str++)) {
-        // hash * 33 + c
+        /* hash * 33 + c */
         hash = ((hash << 5) + hash) + c;
     }
 
@@ -89,138 +89,214 @@ u_int64_t hash(string src) { return hash_personal(src); }
  of the number of buckets, the size of the array will quadruple". Also, when the
  array size is increased, the key-value pairs are redistributed.
  * @param this The hashmap this function is attached to
+ * @return int32_t The return code (0 for no errors)
  */
-void check_resize(struct Hashmap *const this) {
+int32_t check_resize(struct Hashmap *const this) {
+    int32_t ret_code;
+
     if ((float)this->_size / (float)this->_capacity >
         (float)HASHMAP_FILL_MAX / 100.0f) {
-        // The table needs to be increased
+        /* The table needs to be increased */
+        u_int32_t i;
 
         u_int32_t new_capacity = this->_capacity * HASHMAP_EXP_FACT;
         Bucket *new_buckets = malloc(new_capacity * sizeof(Bucket));
 
-        // Initialise the new buckets
-        for (u_int32_t i = 0; i < new_capacity; ++i) {
+        /* Check if the malloc succeeded */
+        if (new_buckets == NULL) {
+            /* Mallocs failed */
+            CERR(TRUE, "Couldn't resize hashmap");
+            return MALLOC_ERR;
+        }
+
+        /* Initialise the new buckets */
+        for (i = 0; i < new_capacity; ++i) {
             Bucket new_bucket = INIT_PAIRLIST;
             new_buckets[i] = new_bucket;
         }
 
-        for (u_int32_t i = 0; i < this->_capacity; ++i) {
-            // Prepare to transfer the stored values to the new bucket
+        for (i = 0; i < this->_capacity; ++i) {
+            /* Prepare to transfer the stored values to the new bucket */
             PairListElem *curr = this->buckets[i]._head;
 
             while (curr != 0) {
-                // Compute the new hash
+                /* Compute the new hash */
                 u_int32_t new_id = hash(curr->data.first) % new_capacity;
 
-                // Insert into the new buckets
-                new_buckets[new_id].insert(&new_buckets[new_id], curr->data);
+                /* Insert into the new buckets */
+                ret_code = new_buckets[new_id].insert(&new_buckets[new_id],
+                                                      curr->data);
+
+                if (ret_code < 0) { return ret_code; }
 
                 curr = curr->next;
             }
 
-            // Free the old buckets
-            this->buckets[i].clear(&this->buckets[i]);
+            /* Free the old buckets */
+            ret_code = this->buckets[i].clear(&this->buckets[i]);
+            if (ret_code < 0) { return ret_code; }
         }
-        // Free the allocated memory
+        /* Free the allocated memory */
         free(this->buckets);
 
-        // Assign the new buckets to the hashmap
+        /* Assign the new buckets to the hashmap */
         this->buckets = new_buckets;
         this->_capacity = new_capacity;
     }
+
+    return 0;
 }
 
-void hashmap_init(struct Hashmap *const this) {
+int32_t hashmap_init(struct Hashmap *const this) {
+    u_int32_t i;
     this->_capacity = HASHMAP_SIZE_START;
     this->_size = 0;
     this->buckets = malloc(HASHMAP_SIZE_START * sizeof(Bucket));
 
-    // Initialise all the buckets
-    for (u_int32_t i = 0; i < this->_capacity; ++i) {
+    if (this->buckets == NULL) {
+        CERR(TRUE, "Couldn't init hashmap");
+        return MALLOC_ERR;
+    }
+
+    /* Initialise all the buckets */
+    for (i = 0; i < this->_capacity; ++i) {
         Bucket new_bucket = INIT_PAIRLIST;
         this->buckets[i] = new_bucket;
     }
 
     this->_is_initialised = 1;
+    return 0;
 }
 
-void hashmap_put(struct Hashmap *const this, StringsPair pair) {
-    // Check if the hashmap is initialised
+int32_t hashmap_put(struct Hashmap *const this, StringsPair pair) {
+    u_int64_t id;
+    int32_t ret_code;
+
+    /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
         DEBUG_MSG("Hashmap was not initialised!");
-        return;
+        return 1;
     }
 
-    // Compute the hash
-    u_int64_t id = hash(pair.first) % this->_capacity;
+    /* Compute the hash */
+    id = hash(pair.first) % this->_capacity;
 
-    // Insert the new pair
-    this->buckets[id].insert(&this->buckets[id], pair);
+    /* Insert the new pair */
+    ret_code = this->buckets[id].insert(&this->buckets[id], pair);
+    if (ret_code < 0) {
+        DEBUG_MSG("Couldn't insert pair into the list");
+        return ret_code;
+    }
+
     this->_size++;
 
-    // Check if a resize is needed
-    check_resize(this);
+    /* Check if a resize is needed */
+    ret_code = check_resize(this);
+    if (ret_code < 0) {
+        CERR(TRUE, "Error resizing hashmap after insert");
+        return ret_code;
+    }
+    return 0;
 }
 
-void hashmap_remove(struct Hashmap *const this, string key) {
-    // Check if the hashmap is initialised
+int32_t hashmap_remove(struct Hashmap *const this, string key) {
+    u_int64_t id;
+    int32_t ret_code;
+
+    /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
         DEBUG_MSG("Hashmap was not initialised!");
-        return;
+        return 1;
     }
 
-    // Compute the hash
-    u_int64_t id = hash(key) % this->_capacity;
+    /* Compute the hash */
+    id = hash(key) % this->_capacity;
 
-    // Remove the pair from the hashmap (using the key)
-    u_int32_t old_bsize = this->buckets[id]._size;
-    this->buckets[id].remove(&this->buckets[id], key);
+    /* Remove the pair from the hashmap (using the key) */
+    ret_code = this->buckets[id].remove(&this->buckets[id], key);
 
-    if (old_bsize == this->buckets[id]._size + 1) { this->_size--; }
+    if (ret_code < 0) {
+        DEBUG_MSG("Couldn't remove pair from the hashmap");
+        return ret_code;
+    }
+
+    if (ret_code == 0) { this->_size--; }
+    return 0;
 }
 
-void hashmap_get(struct Hashmap *const this, string key, StringsPair *pair) {
-    // Check if the hashmap is initialised
+int32_t hashmap_get(struct Hashmap *const this, string key, StringsPair *pair) {
+    u_int64_t id;
+    int32_t ret_code;
+
+    /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
         DEBUG_MSG("Hashmap was not initialised!");
-        make_spair("", "", pair);
-        return;
+
+        ret_code = make_spair("", "", pair);
+        if (ret_code < 0) {
+            DEBUG_MSG("Couldn't retrieve an empty pair for the search");
+            return ret_code;
+        }
+        return 1;
     }
 
-    // Compute the hash
-    u_int64_t id = hash(key) % this->_capacity;
+    /* Compute the hash */
+    id = hash(key) % this->_capacity;
 
-    // Search and return the pair from the hashmap
-    this->buckets[id].search(&this->buckets[id], key, pair);
+    /* Search and return the pair from the hashmap */
+    ret_code = this->buckets[id].search(&this->buckets[id], key, pair);
+    if (ret_code < 0) {
+        DEBUG_MSG("Error during key search");
+        return ret_code;
+    }
+    return 0;
 }
 
-void hashmap_clear(struct Hashmap *const this) {
-    // Check if the hashmap is initialised
+int32_t hashmap_clear(struct Hashmap *const this) {
+    u_int32_t i;
+    int32_t ret_code;
+
+    /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
         DEBUG_MSG("Hashmap was not initialised!");
-        return;
+        return 1;
     }
 
-    // Clear all the buckets
-    for (u_int32_t i = 0; i < this->_capacity; ++i) {
-        this->buckets[i].clear(&this->buckets[i]);
+    /* Clear all the buckets */
+    for (i = 0; i < this->_capacity; ++i) {
+        ret_code = this->buckets[i].clear(&this->buckets[i]);
+
+        if (ret_code < 0) {
+            DEBUG_MSG("Error during hashmap clear");
+            return ret_code;
+        }
     }
 
-    // Free the allocated memory
+    /* Free the allocated memory */
     free(this->buckets);
 
-    // Set the hashmap as uninitialized
+    /* Set the hashmap as uninitialized */
     this->buckets = 0;
     this->_capacity = 0;
     this->_size = 0;
     this->_is_initialised = 0;
+    return 0;
 }
 
-void hashmap_print(struct Hashmap *const this) {
+int32_t hashmap_print(struct Hashmap *const this) {
+    u_int32_t i;
+
+    /* Check if the hashmap is initialised */
+    if (!this->_is_initialised) {
+        DEBUG_MSG("Hashmap was not initialised!");
+        return 1;
+    }
+
     printf("-- Hashmap --\n");
-    for (u_int32_t i = 0; i < this->_capacity; ++i) {
+    for (i = 0; i < this->_capacity; ++i) {
         printf("%d - ", i);
         this->buckets[i].print(&this->buckets[i]);
     }
     printf("\n\n");
+    return 0;
 }

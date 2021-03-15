@@ -18,7 +18,7 @@ LIBS = -ldata
 
 # Compilation parameters
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c99 -I$(LIB_DIR) -DDEBUG
+CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -I$(LIB_DIR) -DDEBUG
 OBJS = src/main.o
 
 # Code Styling

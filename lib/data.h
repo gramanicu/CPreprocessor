@@ -12,4 +12,4 @@
 #include <list/list.h>
 #include <pair/pair.h>
 
-#endif    // DATA_H
+#endif

@@ -12,12 +12,17 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
 
-// Enable/Disable debug mode (debug messages)
+/* Enable/Disable debug mode (debug messages) */
 #ifdef DEBUG
 #define DEBUG_MODE 1
 #else
 #define DEBUG_MODE 0
 #endif
+
+#define TRUE 1
+#define FALSE 0
+
+#define MALLOC_ERR -12
 
 /**
  * @brief If the assertion is true, print error information
@@ -35,22 +40,21 @@
 /**
  * @brief The assertion must be true. If not, print error information. Does not
  * stop the execution
- * @param assertion The condition (a boolean expression is evaluated to 0 or 1)
- * @param msg The message to show
  */
-static inline void CERR(u_int8_t assertion, char *msg) {
-    if (assertion) {
-        fprintf(stderr, "(%s, %d): ", __FILE__, __LINE__);
-        perror(msg);
+#define CERR(assertion, msg)                                   \
+    {                                                          \
+        if (assertion && DEBUG_MODE) {                         \
+            fprintf(stderr, "(%s, %d): ", __FILE__, __LINE__); \
+            perror(msg);                                       \
+        }                                                      \
     }
-}
 
 /**
- * @brief Print the debug message (debug mode must be active)
- * @param msg The message
+ * @brief Print the specified debug message (debug mode must be active)
  */
-static inline void DEBUG_MSG(char *msg) {
-    if (DEBUG_MODE) { fprintf(stderr, "%s\n", msg); }
-}
+#define DEBUG_MSG(msg)                                    \
+    {                                                     \
+        if (DEBUG_MODE) { fprintf(stderr, "%s\n", msg); } \
+    }
 
-#endif    // ERROR_HANDLING_H
+#endif

@@ -21,4 +21,4 @@
     do {        \
     } while (0)
 
-#endif    // UTILS_H
+#endif

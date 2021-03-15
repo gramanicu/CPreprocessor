@@ -8,6 +8,7 @@
 #ifndef PAIR_H
 #define PAIR_H
 
+#include <error_handling.h>
 #include <stdlib.h>
 #include <string.h>
 #include <types.h>
@@ -25,20 +26,23 @@ typedef struct _StringsPair {
  * @param s1 First string
  * @param s2 Second string
  * @param pair The pair of the two strings (pointer)
+ * @return int32_t The return code (0 for no errors)
  */
-void make_spair(string s1, string s2, StringsPair *pair);
+int32_t make_spair(string s1, string s2, StringsPair *pair);
 
 /**
  * @brief Copy-Construct a string pair from another
  * @param p1 The source pair (value)
  * @param p2 The target pair (pointer)
+ * @return int32_t The return code (0 for no errors)
  */
-void copy_spair(StringsPair source, StringsPair *target);
+int32_t copy_spair(StringsPair source, StringsPair *target);
 
 /**
  * @brief Free strings inside a pair
  * @param p The pair (pointer)
+ * @return int32_t The return code (0 for no errors)
  */
-void clear_spair(StringsPair *p);
+int32_t clear_spair(StringsPair *p);
 
-#endif    // PAIR_H
+#endif

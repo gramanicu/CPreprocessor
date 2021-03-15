@@ -7,23 +7,33 @@
 
 #include "pair.h"
 
-void make_spair(string first, string second, StringsPair *pair) {
-    pair->first = malloc(strlen(first) + 1);
-    pair->second = malloc(strlen(second) + 1);
+int32_t make_spair(string first, string second, StringsPair *pair) {
+    pair->first = strcpy(malloc(strlen(first) + 1), first);
+    pair->second = strcpy(malloc(strlen(second) + 1), second);
 
-    strcpy(pair->first, first);
-    strcpy(pair->second, second);
+    if (pair->first == 0 || pair->second == 0) {
+        /* Mallocs failed */
+        CERR(TRUE, "Couldn't create pair");
+        return MALLOC_ERR;
+    }
+    return 0;
 }
 
-void copy_spair(StringsPair source, StringsPair *target) {
-    target->first = malloc(strlen(source.first) + 1);
-    target->second = malloc(strlen(source.second) + 1);
+int32_t copy_spair(StringsPair source, StringsPair *target) {
+    target->first = strcpy(malloc(strlen(source.first) + 1), source.first);
+    target->second = strcpy(malloc(strlen(source.second) + 1), source.second);
 
-    strcpy(target->first, source.first);
-    strcpy(target->second, source.second);
+    if (target->first == 0 || target->second == 0) {
+        /* Mallocs failed */
+        CERR(TRUE, "Couldn't create pair");
+        return MALLOC_ERR;
+    }
+
+    return 0;
 }
 
-void clear_spair(StringsPair *p) {
+int32_t clear_spair(StringsPair *p) {
     free(p->first);
     free(p->second);
+    return 0;
 }

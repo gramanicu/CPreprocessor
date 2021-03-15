@@ -10,105 +10,165 @@
 
 #include "list.h"
 
-void pairlist_search(struct PairList *const this, string key,
-                     StringsPair *pair) {
+int32_t pairlist_search(struct PairList *const this, string key,
+                        StringsPair *pair) {
     PairListElem *curr = this->_head;
+    int32_t ret_code;
 
     if (this->_size == 0) {
-        // Return empty pair if the key is not found (empty list)
-        make_spair("", "", pair);
-        return;
+        /* Return empty pair if the key is not found (empty list) */
+        ret_code = make_spair("", "", pair);
+        if (ret_code < 0) {
+            DEBUG_MSG("Error while searching for a pair in the list");
+            return ret_code;
+        }
+        return 1;
     }
 
     while (curr != 0) {
         if (strcmp(curr->data.first, key) == 0) {
-            copy_spair(curr->data, pair);
-            return;
+            return copy_spair(curr->data, pair);
         }
         curr = curr->next;
     }
 
-    // Return empty pair if the key is not found
-    make_spair("", "", pair);
+    /* Return empty pair if the key is not found */
+    ret_code = make_spair("", "", pair);
+    if (ret_code < -1) {
+        DEBUG_MSG("Error while searching for a pair in the list");
+        return ret_code;
+    }
+    return 1;
 }
 
-void pairlist_push_back(struct PairList *const this, StringsPair pair) {
+int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
     PairListElem *new_node = malloc(sizeof(PairListElem));
+    PairListElem *curr = this->_head;
+    int32_t ret_code;
 
-    copy_spair(pair, &new_node->data);
+    if (new_node == NULL) {
+        DEBUG_MSG("Error while creating a new node to push");
+        return MALLOC_ERR;
+    }
+
+    ret_code = copy_spair(pair, &new_node->data);
+    if (ret_code < 0) {
+        DEBUG_MSG("Error while pushing a pair to the list");
+        return ret_code;
+    }
+
     new_node->next = 0;
     new_node->prev = 0;
 
+    /* If the list is empty, add the node directly */
     if (this->_size == 0) {
         this->_head = new_node;
         this->_size++;
-        return;
+        return 0;
     }
 
-    PairListElem *curr = this->_head;
+    /* Remove the node with the same key (to avoid duplicates/update value) */
+    ret_code = this->remove(this, pair.first);
+
+    /* Check again the list size */
+    if (this->_size == 0) {
+        this->_head = new_node;
+        this->_size++;
+        return 0;
+    }
+
     while (curr->next != 0) { curr = curr->next; }
 
-    // The next is empty, so insert the new value there
+    /* The next is empty, so insert the new value there */
     curr->next = new_node;
     new_node->prev = curr;
     this->_size++;
+    return 0;
 }
 
-void pairlist_remove(struct PairList *const this, string key) {
+int32_t pairlist_remove(struct PairList *const this, string key) {
     PairListElem *curr = this->_head;
+    int32_t ret_code;
 
     if (this->_size == 0) {
-        // Nothing to remove
-        return;
+        /* Nothing to remove */
+        return 1;
     }
 
     if (strcmp(this->_head->data.first, key) == 0) {
-        // The head must be removed
+        /* The head must be removed */
         this->_head = curr->next;
-        clear_spair(&curr->data);
+
+        ret_code = clear_spair(&curr->data);
+        if (ret_code < 0) {
+            DEBUG_MSG("Error when removing element from the list");
+            return ret_code;
+        }
+
         free(curr);
         this->_size--;
-        return;
+        return 0;
     }
 
     while (curr != 0) {
         if (strcmp(curr->data.first, key) == 0) {
-            // Remove the pair
+            /* Remove the pair */
             PairListElem *next = curr->next;
             PairListElem *prev = curr->prev;
 
             if (next != 0) { next->prev = curr->prev; }
             if (prev != 0) { prev->next = curr->next; }
 
-            clear_spair(&curr->data);
+            ret_code = clear_spair(&curr->data);
+            if (ret_code < 0) {
+                DEBUG_MSG("Error when removing element from the list");
+                return ret_code;
+            };
+
             free(curr);
             this->_size--;
-            return;
+            return 0;
         }
         curr = curr->next;
     }
+
+    /* Nothing removed */
+    return 1;
 }
 
-void pairlist_clear(struct PairList *const this) {
+int32_t pairlist_clear(struct PairList *const this) {
     PairListElem *curr = this->_head;
+    int32_t ret_code;
 
     while (curr != 0) {
         PairListElem *next = curr->next;
-        clear_spair(&curr->data);
+
+        ret_code = clear_spair(&curr->data);
+        if (ret_code < 0) {
+            DEBUG_MSG("Error when clearing the list");
+            return ret_code;
+        }
+
         free(curr);
         curr = next;
     }
 
     this->_size = 0;
     this->_head = 0;
+
+    return 0;
 }
 
-void pairlist_print(struct PairList *const this) {
+int32_t pairlist_print(struct PairList *const this) {
     PairListElem *curr = this->_head;
 
-    while (curr != 0) {
-        printf("{ %s - %s } ", curr->data.first, curr->data.second);
-        curr = curr->next;
+    if (this->_size != 0) {
+        while (curr != 0) {
+            printf("{ %s - %s } ", curr->data.first, curr->data.second);
+            curr = curr->next;
+        }
     }
     printf("\n");
+
+    return 0;
 }

@@ -13,4 +13,4 @@
 #define uchar unsigned char
 #define string char*
 
-#endif    // TYPES_H
+#endif
