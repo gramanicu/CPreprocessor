@@ -8,10 +8,10 @@
 #include "pair.h"
 
 int32_t make_spair(string first, string second, StringsPair *pair) {
-    pair->first = strcpy(malloc(strlen(first) + 1), first);
-    pair->second = strcpy(malloc(strlen(second) + 1), second);
+    pair->first = strcpy(calloc(1, strlen(first) + 1), first);
+    pair->second = strcpy(calloc(1, strlen(second) + 1), second);
 
-    if (pair->first == 0 || pair->second == 0) {
+    if (pair->first == NULL || pair->second == NULL) {
         /* Mallocs failed */
         CERR(TRUE, "Couldn't create pair");
         return MALLOC_ERR;
@@ -20,10 +20,11 @@ int32_t make_spair(string first, string second, StringsPair *pair) {
 }
 
 int32_t copy_spair(StringsPair source, StringsPair *target) {
-    target->first = strcpy(malloc(strlen(source.first) + 1), source.first);
-    target->second = strcpy(malloc(strlen(source.second) + 1), source.second);
+    target->first = strcpy(calloc(1, strlen(source.first) + 1), source.first);
+    target->second =
+        strcpy(calloc(1, strlen(source.second) + 1), source.second);
 
-    if (target->first == 0 || target->second == 0) {
+    if (target->first == NULL || target->second == NULL) {
         /* Mallocs failed */
         CERR(TRUE, "Couldn't create pair");
         return MALLOC_ERR;

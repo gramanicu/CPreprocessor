@@ -11,5 +11,3 @@ All the functions inside the data library return 0 for no errors, positive numbe
 - hashmap - first, the map must be initialized, assign the new `HashMap` structure the `INIT_HASHMAP` macro, then call the `init` function. A few things to be careful to:
   - make a new pair before adding it to the map, clear it after
   - make a new pair in which the search result will be stored. Clear it after reading the result.
-
-TODO - make all the void function return int, the error codes.

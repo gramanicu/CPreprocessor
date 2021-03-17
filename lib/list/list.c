@@ -25,7 +25,7 @@ int32_t pairlist_search(struct PairList *const this, string key,
         return 1;
     }
 
-    while (curr != 0) {
+    while (curr != NULL) {
         if (strcmp(curr->data.first, key) == 0) {
             return copy_spair(curr->data, pair);
         }
@@ -42,7 +42,7 @@ int32_t pairlist_search(struct PairList *const this, string key,
 }
 
 int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
-    PairListElem *new_node = malloc(sizeof(PairListElem));
+    PairListElem *new_node = calloc(1, sizeof(PairListElem));
     PairListElem *curr = this->_head;
     int32_t ret_code;
 
@@ -57,8 +57,8 @@ int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
         return ret_code;
     }
 
-    new_node->next = 0;
-    new_node->prev = 0;
+    new_node->next = NULL;
+    new_node->prev = NULL;
 
     /* If the list is empty, add the node directly */
     if (this->_size == 0) {
@@ -77,7 +77,7 @@ int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
         return 0;
     }
 
-    while (curr->next != 0) { curr = curr->next; }
+    while (curr->next != NULL) { curr = curr->next; }
 
     /* The next is empty, so insert the new value there */
     curr->next = new_node;
@@ -110,14 +110,14 @@ int32_t pairlist_remove(struct PairList *const this, string key) {
         return 0;
     }
 
-    while (curr != 0) {
+    while (curr != NULL) {
         if (strcmp(curr->data.first, key) == 0) {
             /* Remove the pair */
             PairListElem *next = curr->next;
             PairListElem *prev = curr->prev;
 
-            if (next != 0) { next->prev = curr->prev; }
-            if (prev != 0) { prev->next = curr->next; }
+            if (next != NULL) { next->prev = curr->prev; }
+            if (prev != NULL) { prev->next = curr->next; }
 
             ret_code = clear_spair(&curr->data);
             if (ret_code < 0) {
@@ -140,7 +140,7 @@ int32_t pairlist_clear(struct PairList *const this) {
     PairListElem *curr = this->_head;
     int32_t ret_code;
 
-    while (curr != 0) {
+    while (curr != NULL) {
         PairListElem *next = curr->next;
 
         ret_code = clear_spair(&curr->data);
@@ -154,7 +154,7 @@ int32_t pairlist_clear(struct PairList *const this) {
     }
 
     this->_size = 0;
-    this->_head = 0;
+    this->_head = NULL;
 
     return 0;
 }
@@ -163,7 +163,7 @@ int32_t pairlist_print(struct PairList *const this) {
     PairListElem *curr = this->_head;
 
     if (this->_size != 0) {
-        while (curr != 0) {
+        while (curr != NULL) {
             printf("{ %s - %s } ", curr->data.first, curr->data.second);
             curr = curr->next;
         }

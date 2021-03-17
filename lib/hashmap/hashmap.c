@@ -100,7 +100,7 @@ int32_t check_resize(struct Hashmap *const this) {
         u_int32_t i;
 
         u_int32_t new_capacity = this->_capacity * HASHMAP_EXP_FACT;
-        Bucket *new_buckets = malloc(new_capacity * sizeof(Bucket));
+        Bucket *new_buckets = calloc(new_capacity, sizeof(Bucket));
 
         /* Check if the malloc succeeded */
         if (new_buckets == NULL) {
@@ -119,7 +119,7 @@ int32_t check_resize(struct Hashmap *const this) {
             /* Prepare to transfer the stored values to the new bucket */
             PairListElem *curr = this->buckets[i]._head;
 
-            while (curr != 0) {
+            while (curr != NULL) {
                 /* Compute the new hash */
                 u_int32_t new_id = hash(curr->data.first) % new_capacity;
 
@@ -151,7 +151,7 @@ int32_t hashmap_init(struct Hashmap *const this) {
     u_int32_t i;
     this->_capacity = HASHMAP_SIZE_START;
     this->_size = 0;
-    this->buckets = malloc(HASHMAP_SIZE_START * sizeof(Bucket));
+    this->buckets = calloc(HASHMAP_SIZE_START, sizeof(Bucket));
 
     if (this->buckets == NULL) {
         CERR(TRUE, "Couldn't init hashmap");
@@ -276,7 +276,7 @@ int32_t hashmap_clear(struct Hashmap *const this) {
     free(this->buckets);
 
     /* Set the hashmap as uninitialized */
-    this->buckets = 0;
+    this->buckets = NULL;
     this->_capacity = 0;
     this->_size = 0;
     this->_is_initialised = 0;
