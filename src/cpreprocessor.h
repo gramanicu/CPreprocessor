@@ -10,6 +10,7 @@
 
 #include <data.h>
 #include <error_handling.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct CPreprocessor {

@@ -22,7 +22,7 @@ CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -I$(LIB_DIR) -DDEBUG
 OBJS = src/main.o src/cpreprocessor.o
 
 # Test arguments
-TEST_ARGS = -Isrc -I lib/ -DDEBUG -DDEBUG1=\"ON\" -D LINUX -D LINUX='"TRUE"' -oout.txt in.txt
+TEST_ARGS = -Isrc -I lib -DDEBUG -DDEBUG1=\"ON\" -D LINUX -D LINUX='"TRUE"' -oout.txt in.txt
 
 # Code Styling
 CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
