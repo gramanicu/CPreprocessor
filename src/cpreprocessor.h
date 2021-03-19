@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DELIMS "\t []{}<>=+-*/%!&|^.,:;()\\"
+#define BUFFER_SIZE 256
+
 typedef struct CPreprocessor {
     Hashmap map;
     string input;

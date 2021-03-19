@@ -180,6 +180,7 @@ int32_t open_input(string path, FILE **fd, struct CPreprocessor *const proc) {
             CERR(TRUE, "Couldn't open file");
             return 1;
         }
+        return 0;
     } else {
         /* The included files need to be (eventually) searched */
         FILE *check;
@@ -243,6 +244,77 @@ int32_t close_file(FILE *fd) {
 }
 
 /**
+ * @brief Reads a line into the line buffer, from the input. (it takes into
+ * account the line continuation character)
+ * @param line The read line
+ * @param input The input FILE
+ * @return int32_t The return code (0 for EOF, 1 for Success, others for errors)
+ */
+int32_t read_line(string *line, FILE *input) {
+    string buffer = calloc(BUFFER_SIZE, sizeof(char));
+    string line_start;
+    int32_t ret_code;
+    u_int8_t had_multi = FALSE;
+
+    free(*line);
+    *line = calloc(BUFFER_SIZE, sizeof(char));
+    if (buffer == NULL) {
+        CERR(TRUE, "Couldn't allocate memory");
+        return MALLOC_ERR;
+    }
+
+    /* While we can read and the current line is not continued, keep reading */
+    while ((fgets(buffer, BUFFER_SIZE, input) != NULL)) {
+        size_t len = strlen(buffer);
+        if (len > 1) {
+            if (buffer[len - 2] == '\\') {
+                had_multi = TRUE;
+
+                /* Line must be continued */
+                buffer[len - 2] = '\0';
+                line_start = buffer;
+
+                /* Remove tabs or spaces from the start of the line */
+                while (line_start[0] == '\t' || line_start[0] == ' ') {
+                    line_start++;
+                }
+
+                ret_code = concatentate(line, *line, line_start);
+
+                if (ret_code != 0) {
+                    free(buffer);
+                    return ret_code;
+                }
+
+                /* Read next line */
+                continue;
+            }
+        }
+
+        line_start = buffer;
+        /* Remove tabs or spaces from the start of the line */
+        if (had_multi) {
+            while (line_start[0] == '\t' || line_start[0] == ' ') {
+                line_start++;
+            }
+        }
+
+        /* The line is ended */
+        ret_code = concatentate(line, *line, line_start);
+
+        if (ret_code != 0) {
+            free(buffer);
+            return ret_code;
+        }
+        free(buffer);
+        return 1;
+    }
+
+    free(buffer);
+    return 0;
+}
+
+/**
  * @brief Preprocess data from the input file descriptor and
  * write the processed data into the output file descriptor
  * @param i_fd The input file descriptor
@@ -252,7 +324,78 @@ int32_t close_file(FILE *fd) {
  */
 int32_t process_input(FILE *i_fd, FILE *o_fd,
                       struct CPreprocessor *const proc) {
-    /* Process the file */
+    string buffer = calloc(BUFFER_SIZE, sizeof(char));
+    string line = calloc(BUFFER_SIZE, sizeof(char));
+    string unprocessed_pointer;
+    string token;
+    string processed_pointer;
+    string before;
+    int32_t ret_code, read_code, offset;
+
+    if (buffer == NULL) {
+        CERR(TRUE, "Couldn't allocate memory");
+        return MALLOC_ERR;
+    }
+
+    if (line == NULL) {
+        CERR(TRUE, "Couldn't allocate memory");
+        free(buffer);
+        return MALLOC_ERR;
+    }
+
+    /* Read lines 1 by 1 */
+    read_code = read_line(&buffer, i_fd);
+    while (read_code == 1) {
+        strcpy(line, buffer);
+        unprocessed_pointer = buffer;
+
+        /* Tokenize line to get words that could be macros */
+        token = strtok(line, DELIMS);
+        while (token) {
+            /* Check if there are chars before the current token that weren't
+             * written to the output */
+            processed_pointer = strstr(unprocessed_pointer, token);
+            offset = processed_pointer - unprocessed_pointer;
+
+            /* If there is something */
+            if (offset) {
+                before =
+                    strncpy(calloc(offset + 1, 1), unprocessed_pointer, offset);
+
+                if (before == NULL) {
+                    CERR(TRUE, "Couldn't allocate memory");
+                    free(buffer);
+                    free(line);
+                    return MALLOC_ERR;
+                }
+
+                unprocessed_pointer = processed_pointer;
+                fwrite(before, sizeof(char), strlen(before), o_fd);
+                free(before);
+            }
+            fwrite(token, sizeof(char), strlen(token), o_fd);
+            unprocessed_pointer += strlen(token);
+
+            token = strtok(NULL, DELIMS);
+        }
+
+        /* Check if it was EOF (in some cases, the file can end without newline,
+         * which can lead to some problems) */
+        if (buffer[strlen(buffer) - 1] != '\n') {
+            /* As the newline character can be a token, no line (except the last
+             * one) can have unprocessed data after the tokenization. */
+            fwrite(unprocessed_pointer, sizeof(char),
+                   strlen(unprocessed_pointer), o_fd);
+        }
+
+        /* Read next line */
+        read_code = read_line(&buffer, i_fd);
+    }
+
+    free(buffer);
+    free(line);
+
+    if (read_code < 0) { return read_code; }
     return 0;
 }
 
@@ -365,22 +508,34 @@ int32_t cpreprocessor_init(struct CPreprocessor *const this, u_int32_t argc,
 
 int32_t cpreprocessor_start(struct CPreprocessor *const this) {
     u_int32_t i;
-    FILE *input;
+    int32_t ret_code;
+    FILE *input, *output;
 
-    printf("Input: %s\nOutput: %s\n",
-           this->_in_set == TRUE ? this->input : "STDIN",
-           this->_out_set == TRUE ? this->output : "STDOUT");
-    printf("Includes: ");
-    for (i = 0; i < this->_c_includes; ++i) {
-        printf("%s ", this->includes[i]);
+    if (this->_in_set == TRUE) {
+        ret_code = open_input(this->input, &input, this);
+        if (ret_code != 0) {
+            this->clear(this);
+            return ret_code;
+        }
+    } else {
+        input = stdin;
     }
-    printf("\nDefines:\n");
-    this->map.print(&this->map);
 
-    if (open_input("data.h", &input, this) == 0) {
-        printf("%d\n", input->_fileno);
-        close_file(input);
+    if (this->_out_set == TRUE) {
+        output = fopen(this->output, "w");
+        if (output == NULL) {
+            this->clear(this);
+            close_file(input);
+            CERR(TRUE, "Couldn't open file");
+            return 1;
+        }
+    } else {
+        output = stdout;
     }
+
+    process_input(input, output, this);
+    close_file(input);
+    close_file(output);
 
     this->clear(this);
     return 0;

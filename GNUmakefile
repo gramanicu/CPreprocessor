@@ -31,13 +31,13 @@ CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
 MFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
 
 # Build the program
-all: build_libs build
+build: build_libs build_app
 	$(info Deleting object files and libraries...)
 	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
 	@rm -rf $(OBJS)
 
 # Compile the executable
-build: $(OBJS)
+build_app: $(OBJS)
 	$(info Building executable...)
 	@mkdir -p $(BIN_DIR)
 	@$(CC) -o $(EXE) $^ $(CFLAGS) $(LIBS) -L$(LIB_DIR)
@@ -53,12 +53,12 @@ build_libs:
 	@$(CC) -o $@ -c $< $(CFLAGS)
 
 # Run the binary
-run: clean all
+run: clean build
 	./$(EXE) $(TEST_ARGS)
 
 	
 # Checks the memory for leaks
-memory:clean all
+memory:clean build
 	valgrind $(MFLAGS) ./$(EXE) $(TEST_ARGS)
 
 # Automatic coding style, in my personal style

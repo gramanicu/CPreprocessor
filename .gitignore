@@ -53,3 +53,5 @@ dkms.conf
 
 bin/*
 .vscode/
+out.txt
+in.txt
