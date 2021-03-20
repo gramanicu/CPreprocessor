@@ -315,7 +315,7 @@ int32_t read_line(string *line, FILE *input) {
 }
 
 /**
- * @brief Helper functions used by the precess_input function, to allocate the
+ * @brief Helper functions used by the process_input function, to allocate the
  * memory for the different buffers/arrays
  * @param buffer The buffer used to store the original line
  * @param line The buffer for the line that will be tokenized
@@ -349,6 +349,75 @@ int32_t _allocate_process_data(string *buffer, string *line,
 }
 
 /**
+ * @brief Helper functions used by the process_input function, to free the
+ * memory for the different buffers/arrays
+ * @param buffer The buffer used to store the original line
+ * @param line The buffer for the line that will be tokenized
+ * @param expansion The buffer for the expansion of a macro
+ * @return int32_t The return code
+ */
+int32_t _free_process_data(string *buffer, string *line, string *expansion) {
+    free(*buffer);
+    free(*line);
+    free(*expansion);
+    return 0;
+}
+
+/**
+ * @brief Check if the key is defined
+ * @param proc The processor that uses this function
+ * @param key The key/word to search
+ * @return int32_t The return code (0 - exists, 1 - doesn't exist, other -
+ * error)
+ */
+int32_t is_defined(struct CPreprocessor *const proc, string key) {
+    int32_t ret_code;
+    StringsPair pair;
+    ret_code = proc->map.get(&proc->map, key, &pair);
+    if (ret_code < 0) { return ret_code; }
+
+    if (strcmp(pair.first, key) == 0) {
+        ret_code = 0;
+    } else {
+        ret_code = 1;
+    }
+
+    clear_spair(&pair);
+    return ret_code;
+}
+
+/**
+ * @brief Tokenize a string
+ * @param source The string
+ * @param delims The delimitators
+ * @param delim The delimitator that was found
+ * @return string The token
+ */
+string simple_tok(string *source, string delims, string *delim) {
+    size_t s_l, d_l;
+    string start = *source;
+    u_int32_t i, j;
+
+    if (*source == NULL) { return NULL; }
+    s_l = strlen(*source);
+    d_l = strlen(delims);
+
+    for (i = 0; i < s_l; ++i) {
+        for (j = 0; j < d_l; ++j) {
+            if ((*source + i)[0] == delims[j]) {
+                (*source + i)[0] = '\0';
+                (*delim)[0] = delims[j];
+                *source = *source + i + 1;
+                return start;
+            }
+        }
+    }
+
+    *source = NULL;
+    return start;
+}
+
+/**
  * @brief Try to expand the specified string. If it can't code 1 is returned.
  * @param proc The processor that uses this function
  * @param key The key/word to expand
@@ -359,6 +428,12 @@ int32_t _expand(struct CPreprocessor *const proc, string key,
                 string *expansion) {
     int32_t ret_code;
     StringsPair pair;
+    string value_start;
+    string value;
+    string token;
+    string f_exp = calloc(BUFFER_SIZE, 1);
+    string l_exp = calloc(BUFFER_SIZE, 1);
+    string delim = calloc(2, 1);
     ret_code = proc->map.get(&proc->map, key, &pair);
 
     if (ret_code < 0) { return ret_code; }
@@ -366,19 +441,71 @@ int32_t _expand(struct CPreprocessor *const proc, string key,
     /* If this is key exists in the hashmap */
     if (strcmp(pair.first, key) == 0) {
         /* Try to expand it too */
-        ret_code = _expand(proc, pair.second, expansion);
-
-        if (ret_code < 0) {
-            clear_spair(&pair);
-            return ret_code;
+        value = strcpy(calloc(strlen(pair.second) + 1, 1), pair.second);
+        if (value == NULL) {
+            CERR(TRUE, "Couldn't allocate memory");
+            return MALLOC_ERR;
         }
-        if (ret_code == 1) { strcpy(*expansion, pair.second); }
+        value_start = value;
+
+        token = simple_tok(&value, DELIMS, &delim);
+        while (token) {
+            if (strcmp(token, "") != 0 && strcmp(token, " ") != 0) {
+                memset(l_exp, 0, BUFFER_SIZE);
+                ret_code = _expand(proc, token, &l_exp);
+
+                if (ret_code < 0) {
+                    clear_spair(&pair);
+                    return ret_code;
+                } else if (ret_code == 0) {
+                    concatentate(&f_exp, f_exp, l_exp);
+                    concatentate(&f_exp, f_exp, delim);
+                } else {
+                    concatentate(&f_exp, f_exp, token);
+                }
+            } else {
+                if (strcmp(token, "") == 0) {
+                    concatentate(&f_exp, f_exp, delim);
+                }
+            }
+
+            token = simple_tok(&value, DELIMS, &delim);
+        }
+
+        strcpy(*expansion, f_exp);
+        free(value_start);
     } else {
+        free(delim);
+        free(f_exp);
+        free(l_exp);
         clear_spair(&pair);
         return 1;
     }
 
+    free(delim);
+    free(f_exp);
+    free(l_exp);
     clear_spair(&pair);
+    return 0;
+}
+
+/**
+ * @brief Process #define & #undef macros
+ * @param proc The processor that uses this function
+ * @param token The macro name
+ * @param rest_of_line The arguments (if they exist)
+ * @return int32_t The return code
+ */
+int32_t _process_definitions(struct CPreprocessor *const proc, string token,
+                             string rest_of_line) {
+    int32_t ret_code = 0;
+    if (strncmp(token, "#define", 7) == 0) {
+        ret_code = add_define(proc, rest_of_line);
+    } else if (strncmp(token, "#undef", 6) == 0) {
+        ret_code = proc->map.remove(&proc->map, rest_of_line);
+    }
+
+    if (ret_code < 0) { return ret_code; }
     return 0;
 }
 
@@ -392,23 +519,23 @@ int32_t _expand(struct CPreprocessor *const proc, string key,
  */
 int32_t process_input(FILE *i_fd, FILE *o_fd,
                       struct CPreprocessor *const proc) {
-    string buffer;
-    string line;
-    string key_value;
-    string unprocessed_pointer;
-    string token;
-    string processed_pointer;
-    string before;
-    string expansion;
+    string buffer;       /* Original read line */
+    string line;         /* The "tokenizeable" line */
+    string rest_of_line; /* Pointer to the rest of the line (after a token) */
+    string unprocessed_pointer; /* Pointer used to write unprocessed data */
+    string token;               /* Pointer to the extracted tokens */
+    string processed_pointer;   /* Pointer used to write unprocessed data */
+    string before; /* Pointer for unprocessed data that needs to be written */
+    string expansion; /* Pointer used to store the expansion of a token */
     int32_t ret_code, read_code, offset;
     int8_t ifs[BUFFER_SIZE];
-    int32_t opened_ifs = 0;
+    int32_t opened_ifs = -1;
 
     /* Init memory for buffers/arrays */
     ret_code = _allocate_process_data(&buffer, &line, &expansion);
     if (ret_code != 0) { return ret_code; }
 
-    memset(ifs, BUFFER_SIZE, sizeof(int8_t));
+    memset(ifs, FALSE, BUFFER_SIZE * sizeof(int8_t));
 
     /* Read lines 1 by 1 */
     read_code = read_line(&buffer, i_fd);
@@ -416,81 +543,103 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
         strcpy(line, buffer);
         unprocessed_pointer = buffer;
 
+        /* To make sure there are no spaces before a #[directive], we must
+         * extract a token. However, we can't tokenize the line, as it will
+         * alter it. For this reason, I used the expansion array, which will be
+         * anyway cleaned before use */
+        strcpy(expansion, buffer);
+
+        token = strtok(expansion, " ");
         /* Check if the line starts with a preprocessor directive. This
          * assumes that there are no characters before a directive. */
-        if (line[0] == '#') {
-            token = strtok(line, " ");
-            if (strcmp(token, "#define") == 0) {
-                key_value = strtok(NULL, "\n");
-                add_define(proc, key_value);
-            } else if (strcmp(token, "#if") == 0) {
-            } else if (strcmp(token, "#elif") == 0) {
-            } else if (strcmp(token, "#else") == 0) {
-            } else if (strcmp(token, "#endif") == 0) {
-            } else if (strcmp(token, "#ifdef") == 0) {
-            } else if (strcmp(token, "#ifndef") == 0) {
-            } else if (strcmp(token, "#include") == 0) {
-            } else if (strcmp(token, "#undef") == 0) {
-                token = strtok(NULL, "\n");
-                ret_code = proc->map.remove(&proc->map, token);
+        if (token[0] == '#') {
+            /* Lines with directives on them */
+            token = strtok(line, " \n");
+            rest_of_line = strtok(NULL, "\n");
+
+            if (token[1] == 'e') {
+                /* else, elif, endif. These terminate blocks. */
+                printf("E DIR\n");
+            } else if (opened_ifs == -1 || ifs[opened_ifs] == TRUE) {
+                /* Everything here can be inside a block, so we must check the
+                 * "if state" */
+
+                if (strcmp(token, "#include") == 0) {
+                    /* include is a special case of macro starting with 'i' */
+                    printf("INCLUDE DIR\n");
+                } else {
+                    if (token[1] == 'd' || token[1] == 'u') {
+                        /* define or undefine */
+                        _process_definitions(proc, token, rest_of_line);
+                    } else if (token[1] == 'i') {
+                        /* if, ifndef, ifdef */
+                        printf("I DIR\n");
+                    }
+                }
             }
         } else {
-            /* Tokenize line to get words that could be macros */
-            token = strtok(line, DELIMS);
-            while (token) {
-                /* Check if there are chars before the current token that
-                 * weren't written to the output */
-                processed_pointer = strstr(unprocessed_pointer, token);
-                offset = processed_pointer - unprocessed_pointer;
+            /* Normal lines, without any directives */
+            /* Ignored if the #if... macro was "false" */
+            if (opened_ifs == -1 || ifs[opened_ifs] == TRUE) {
+                /* Tokenize line to get words that could be macros
+                 */
+                token = strtok(line, DELIMS);
+                while (token) {
+                    /* Check if there are chars before the current
+                     * token that weren't written to the output */
+                    processed_pointer = strstr(unprocessed_pointer, token);
+                    offset = processed_pointer - unprocessed_pointer;
 
-                /* If there is unprocessed that needs to be written*/
-                if (offset) {
-                    before = strncpy(calloc(offset + 1, 1), unprocessed_pointer,
-                                     offset);
+                    /* If there is unprocessed that needs to be
+                     * written*/
+                    if (offset) {
+                        before = strncpy(calloc(offset + 1, 1),
+                                         unprocessed_pointer, offset);
 
-                    if (before == NULL) {
-                        CERR(TRUE, "Couldn't allocate memory");
-                        free(buffer);
-                        free(line);
-                        free(expansion);
-                        return MALLOC_ERR;
+                        if (before == NULL) {
+                            CERR(TRUE, "Couldn't allocate memory");
+                            _free_process_data(&buffer, &line, &expansion);
+                            return MALLOC_ERR;
+                        }
+
+                        unprocessed_pointer = processed_pointer;
+                        fwrite(before, sizeof(char), strlen(before), o_fd);
+                        free(before);
                     }
 
-                    unprocessed_pointer = processed_pointer;
-                    fwrite(before, sizeof(char), strlen(before), o_fd);
-                    free(before);
+                    /* Check if the token is a macro to be expanded
+                     */
+                    ret_code = _expand(proc, token, &expansion);
+
+                    if (ret_code < 0) {
+                        _free_process_data(&buffer, &line, &expansion);
+                        return ret_code;
+                    }
+
+                    if (ret_code == 0) {
+                        fwrite(expansion, sizeof(char), strlen(expansion),
+                               o_fd);
+                    } else {
+                        /* Not a macro */
+                        fwrite(token, sizeof(char), strlen(token), o_fd);
+                    }
+
+                    memset(expansion, 0, BUFFER_SIZE);
+                    unprocessed_pointer += strlen(token);
+
+                    token = strtok(NULL, DELIMS);
                 }
 
-                /* Check if the token is a macro to be expanded */
-                ret_code = _expand(proc, token, &expansion);
-
-                if (ret_code < 0) {
-                    free(buffer);
-                    free(line);
-                    free(expansion);
-                    return ret_code;
+                /* Check if it was EOF (in some cases, the file can
+                 * end without newline, which can lead to some
+                 * problems) */
+                if (buffer[strlen(buffer) - 1] != '\n') {
+                    /* As the newline character can be a token, no
+                     * line (except the last one) can have
+                     * unprocessed data after the tokenization. */
+                    fwrite(unprocessed_pointer, sizeof(char),
+                           strlen(unprocessed_pointer), o_fd);
                 }
-
-                if (ret_code == 0) {
-                    fwrite(expansion, sizeof(char), strlen(expansion), o_fd);
-                } else {
-                    /* Not a macro */
-                    fwrite(token, sizeof(char), strlen(token), o_fd);
-                }
-
-                unprocessed_pointer += strlen(token);
-
-                token = strtok(NULL, DELIMS);
-            }
-
-            /* Check if it was EOF (in some cases, the file can end without
-             * newline, which can lead to some problems) */
-            if (buffer[strlen(buffer) - 1] != '\n') {
-                /* As the newline character can be a token, no line (except
-                 * the last one) can have unprocessed data after the
-                 * tokenization. */
-                fwrite(unprocessed_pointer, sizeof(char),
-                       strlen(unprocessed_pointer), o_fd);
             }
         }
 
@@ -498,9 +647,7 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
         read_code = read_line(&buffer, i_fd);
     }
 
-    free(buffer);
-    free(line);
-    free(expansion);
+    _free_process_data(&buffer, &line, &expansion);
 
     if (read_code < 0) { return read_code; }
     return 0;

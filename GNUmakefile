@@ -4,12 +4,10 @@
 
 # Project directories
 SRC_DIR = src/
-BIN_DIR = bin/
 LIB_DIR = lib/
 
 # Executable name and path
-BIN_NAME = so-cpp
-EXE = $(addprefix $(BIN_DIR), $(BIN_NAME))
+EXE = so-cpp
 
 # Libraries information (build, components)
 LIB_MAKE_BUILD = GNUmakefile all
@@ -39,7 +37,6 @@ build: build_libs build_app
 # Compile the executable
 build_app: $(OBJS)
 	$(info Building executable...)
-	@mkdir -p $(BIN_DIR)
 	@$(CC) -o $(EXE) $^ $(CFLAGS) $(LIBS) -L$(LIB_DIR)
 
 # Build the libraries
@@ -75,7 +72,7 @@ beauty_req:
 # Remove object files and executables
 clean:
 	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
-	@rm -rf $(BIN_DIR) $(OBJS)
+	@rm -rf $(EXE) $(OBJS)
 
 # Debuggin makefile
 print-% :
