@@ -8,12 +8,13 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include <error_handling.h>
-#include <pair/pair.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <types.h>
+
+#include "error_handling.h"
+#include "pair.h"
+#include "types.h"
 
 /* A "constructor" for the list */
 #define INIT_PAIRLIST                                               \

@@ -8,8 +8,8 @@
 #ifndef DATA_H
 #define DATA_H
 
-#include <hashmap/hashmap.h>
-#include <list/list.h>
-#include <pair/pair.h>
+#include "hashmap.h"
+#include "list.h"
+#include "pair.h"
 
 #endif

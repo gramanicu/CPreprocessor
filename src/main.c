@@ -5,10 +5,10 @@
  * @copyright Copyright (c) 2021
  */
 
-#include <error_handling.h>
 #include <stdlib.h>
 
 #include "cpreprocessor.h"
+#include "error_handling.h"
 
 int32_t process_ret_code(int32_t ret_code) {
     if (ret_code == MALLOC_ERR) { return -MALLOC_ERR; }

@@ -1,49 +1,29 @@
 # Copyright 2021 Grama Nicolae
 # The linux makefile.
-# It follows this template - https://gist.github.com/keeferrourke/fe72476a8dd8c4c02ff18eaed74e1de0
-
 # Project directories
-SRC_DIR = src/
-LIB_DIR = lib/
 
 # Executable name and path
 EXE = so-cpp
 
 # Libraries information (build, components)
-LIB_MAKE_BUILD = GNUmakefile all
-LIB_MAKE_CLEAN = GNUmakefile clean
-LIBS = -ldata
-
 # Compilation parameters
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -I$(LIB_DIR) -DDEBUG
-OBJS = src/main.o src/cpreprocessor.o
+CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -DDEBUG
+OBJS = src/main.o src/cpreprocessor.o src/pair.o src/list.o src/hashmap.o
 
 # Test arguments
 TEST_ARGS = -Isrc -I lib -DDEBUG -DDEBUG1=\"ON\" -D LINUX -D LINUX='"TRUE"' -oout.txt in.txt
 
 # Code Styling
-CSFILES = src/* lib/*.h lib/*/*.h lib/*/*.c
+CSFILES = src/*
 
 # Memory check params
 MFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
 
 # Build the program
-build: build_libs build_app
-	$(info Deleting object files and libraries...)
-	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
-	@rm -rf $(OBJS)
-
-# Compile the executable
-build_app: $(OBJS)
+build: $(OBJS)
 	$(info Building executable...)
-	@$(CC) -o $(EXE) $^ $(CFLAGS) $(LIBS) -L$(LIB_DIR)
-
-# Build the libraries
-build_libs:
-	$(info Building libraries...)
-	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_BUILD)
-	$(info Building object files...)
+	@$(CC) -o $(EXE) $^ $(CFLAGS)
 
 # Create the object files
 %.o: %.c
@@ -52,7 +32,6 @@ build_libs:
 # Run the binary
 run: clean build
 	./$(EXE) $(TEST_ARGS)
-
 	
 # Checks the memory for leaks
 memory:clean build
@@ -71,7 +50,6 @@ beauty_req:
 
 # Remove object files and executables
 clean:
-	@$(MAKE) -s -C $(LIB_DIR) -f $(LIB_MAKE_CLEAN)
 	@rm -rf $(EXE) $(OBJS)
 
 # Debuggin makefile

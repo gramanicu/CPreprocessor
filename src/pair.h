@@ -8,10 +8,11 @@
 #ifndef PAIR_H
 #define PAIR_H
 
-#include <error_handling.h>
 #include <stdlib.h>
 #include <string.h>
-#include <types.h>
+
+#include "error_handling.h"
+#include "types.h"
 
 /**
  * @brief A pair data structure, that stores two strings/char arrays
