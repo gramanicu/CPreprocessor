@@ -8,12 +8,7 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "error_handling.h"
 #include "list.h"
-#include "types.h"
 
 #define HASHMAP_SIZE_START 16 /* Initial size */
 #define HASHMAP_FILL_MAX 50   /* Max fill percent */

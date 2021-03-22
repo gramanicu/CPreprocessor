@@ -322,8 +322,8 @@ int32_t read_line(string *line, FILE *input) {
  * @param expansion The buffer for the expansion of a macro
  * @return int32_t The return code
  */
-int32_t _allocate_process_data(string *buffer, string *line,
-                               string *expansion) {
+int32_t _allocate_process_data(string *buffer, string *line, string *expansion,
+                               int8_t **ifs) {
     *buffer = calloc(BUFFER_SIZE, sizeof(char));
     if (*buffer == NULL) {
         CERR(TRUE, "Couldn't allocate memory");
@@ -345,6 +345,15 @@ int32_t _allocate_process_data(string *buffer, string *line,
         return MALLOC_ERR;
     }
 
+    *ifs = calloc(BUFFER_SIZE, sizeof(int8_t));
+    if (*ifs == NULL) {
+        CERR(TRUE, "Couldn't allocate memory");
+        free(*buffer);
+        free(*line);
+        free(*expansion);
+        return MALLOC_ERR;
+    }
+
     return 0;
 }
 
@@ -356,10 +365,12 @@ int32_t _allocate_process_data(string *buffer, string *line,
  * @param expansion The buffer for the expansion of a macro
  * @return int32_t The return code
  */
-int32_t _free_process_data(string *buffer, string *line, string *expansion) {
+int32_t _free_process_data(string *buffer, string *line, string *expansion,
+                           int8_t **ifs) {
     free(*buffer);
     free(*line);
     free(*expansion);
+    free(*ifs);
     return 0;
 }
 
@@ -373,6 +384,9 @@ int32_t _free_process_data(string *buffer, string *line, string *expansion) {
 int32_t is_defined(struct CPreprocessor *const proc, string key) {
     int32_t ret_code;
     StringsPair pair;
+
+    if (key == NULL) { return 1; }
+
     ret_code = proc->map.get(&proc->map, key, &pair);
     if (ret_code < 0) { return ret_code; }
 
@@ -509,6 +523,107 @@ int32_t _process_definitions(struct CPreprocessor *const proc, string token,
     return 0;
 }
 
+int32_t _process_ifs(struct CPreprocessor *const proc, string token,
+                     string rest_of_line, int32_t *opened_ifs, int8_t **ifs) {
+    int32_t ret_code;
+    int32_t exist;
+    string expansion = calloc(BUFFER_SIZE, 1);
+
+    if (expansion == NULL) {
+        CERR(TRUE, "Couldn't allocate memory");
+        return MALLOC_ERR;
+    }
+
+    exist = is_defined(proc, rest_of_line);
+
+    if (exist < 0) {
+        free(expansion);
+        return exist;
+    }
+
+    if (exist == 0) {
+        ret_code = _expand(proc, rest_of_line, &expansion);
+        if (ret_code < 0) {
+            free(expansion);
+            return ret_code;
+        }
+    } else {
+        if (rest_of_line != NULL) {
+            strcpy(expansion, rest_of_line);
+        } else {
+            strcpy(expansion, "0");
+        }
+    }
+
+    if ((strcmp(token, "#if") == 0 && strcmp(expansion, "0") != 0) ||
+        (strcmp(token, "#ifdef") == 0 && exist == 0) ||
+        (strcmp(token, "#ifndef") == 0 && exist != 0)) {
+        /* True */
+        *opened_ifs = *opened_ifs + 1;
+        (*ifs)[*opened_ifs] = TRUE;
+    } else {
+        /* False */
+        *opened_ifs = *opened_ifs + 1;
+        (*ifs)[*opened_ifs] = FALSE;
+    }
+
+    free(expansion);
+    return 0;
+}
+
+int32_t _process_elses(struct CPreprocessor *const proc, string token,
+                       string rest_of_line, int32_t *opened_ifs, int8_t **ifs) {
+    int32_t ret_code;
+    int32_t exist;
+    string expansion = calloc(BUFFER_SIZE, 1);
+
+    exist = is_defined(proc, rest_of_line);
+
+    if (exist < 0) {
+        free(expansion);
+        return exist;
+    }
+
+    if (exist == 0) {
+        ret_code = _expand(proc, rest_of_line, &expansion);
+        if (ret_code < 0) {
+            free(expansion);
+            return ret_code;
+        }
+    } else {
+        if (rest_of_line != NULL) {
+            strcpy(expansion, rest_of_line);
+        } else {
+            strcpy(expansion, "0");
+        }
+    }
+
+    if (strcmp(token, "#else") == 0) {
+        if ((*ifs)[*opened_ifs] == FALSE) {
+            (*ifs)[*opened_ifs] = TRUE;
+        } else {
+            (*ifs)[*opened_ifs] = FALSE;
+        }
+    } else if (strcmp(token, "#endif") == 0) {
+        (*ifs)[*opened_ifs] = FALSE;
+        *opened_ifs = *opened_ifs - 1;
+    } else if (strcmp(token, "#elif") == 0) {
+        if ((*ifs)[*opened_ifs] == FALSE && strcmp(expansion, "0") != 0) {
+            (*ifs)[*opened_ifs] = TRUE;
+        } else {
+            (*ifs)[*opened_ifs] = FALSE;
+        }
+    }
+
+    free(expansion);
+    return 0;
+}
+
+int32_t _process_includes(struct CPreprocessor *const proc, string token,
+                          string rest_of_line, FILE **o_fd) {
+    return 0;
+}
+
 /**
  * @brief Preprocess data from the input file descriptor and
  * write the processed data into the output file descriptor
@@ -517,7 +632,7 @@ int32_t _process_definitions(struct CPreprocessor *const proc, string token,
  * @param proc The preprocessor "object"
  * @return int32_t the return code
  */
-int32_t process_input(FILE *i_fd, FILE *o_fd,
+int32_t process_input(FILE *i_fd, FILE **o_fd,
                       struct CPreprocessor *const proc) {
     string buffer;       /* Original read line */
     string line;         /* The "tokenizeable" line */
@@ -528,11 +643,11 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
     string before; /* Pointer for unprocessed data that needs to be written */
     string expansion; /* Pointer used to store the expansion of a token */
     int32_t ret_code, read_code, offset;
-    int8_t ifs[BUFFER_SIZE];
+    int8_t *ifs;
     int32_t opened_ifs = -1;
 
     /* Init memory for buffers/arrays */
-    ret_code = _allocate_process_data(&buffer, &line, &expansion);
+    ret_code = _allocate_process_data(&buffer, &line, &expansion, &ifs);
     if (ret_code != 0) { return ret_code; }
 
     memset(ifs, FALSE, BUFFER_SIZE * sizeof(int8_t));
@@ -557,25 +672,35 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
             token = strtok(line, " \n");
             rest_of_line = strtok(NULL, "\n");
 
+            ret_code = 0;
             if (token[1] == 'e') {
                 /* else, elif, endif. These terminate blocks. */
-                printf("E DIR\n");
+                ret_code = _process_elses(proc, token, rest_of_line,
+                                          &opened_ifs, &ifs);
             } else if (opened_ifs == -1 || ifs[opened_ifs] == TRUE) {
                 /* Everything here can be inside a block, so we must check the
                  * "if state" */
 
                 if (strcmp(token, "#include") == 0) {
                     /* include is a special case of macro starting with 'i' */
-                    printf("INCLUDE DIR\n");
+                    ret_code =
+                        _process_includes(proc, token, rest_of_line, o_fd);
                 } else {
                     if (token[1] == 'd' || token[1] == 'u') {
                         /* define or undefine */
-                        _process_definitions(proc, token, rest_of_line);
+                        ret_code =
+                            _process_definitions(proc, token, rest_of_line);
                     } else if (token[1] == 'i') {
                         /* if, ifndef, ifdef */
-                        printf("I DIR\n");
+                        ret_code = _process_ifs(proc, token, rest_of_line,
+                                                &opened_ifs, &ifs);
                     }
                 }
+            }
+
+            if (ret_code < 0) {
+                _free_process_data(&buffer, &line, &expansion, &ifs);
+                return ret_code;
             }
         } else {
             /* Normal lines, without any directives */
@@ -598,12 +723,13 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
 
                         if (before == NULL) {
                             CERR(TRUE, "Couldn't allocate memory");
-                            _free_process_data(&buffer, &line, &expansion);
+                            _free_process_data(&buffer, &line, &expansion,
+                                               &ifs);
                             return MALLOC_ERR;
                         }
 
                         unprocessed_pointer = processed_pointer;
-                        fwrite(before, sizeof(char), strlen(before), o_fd);
+                        fwrite(before, sizeof(char), strlen(before), *o_fd);
                         free(before);
                     }
 
@@ -612,16 +738,16 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
                     ret_code = _expand(proc, token, &expansion);
 
                     if (ret_code < 0) {
-                        _free_process_data(&buffer, &line, &expansion);
+                        _free_process_data(&buffer, &line, &expansion, &ifs);
                         return ret_code;
                     }
 
                     if (ret_code == 0) {
                         fwrite(expansion, sizeof(char), strlen(expansion),
-                               o_fd);
+                               *o_fd);
                     } else {
                         /* Not a macro */
-                        fwrite(token, sizeof(char), strlen(token), o_fd);
+                        fwrite(token, sizeof(char), strlen(token), *o_fd);
                     }
 
                     memset(expansion, 0, BUFFER_SIZE);
@@ -638,7 +764,7 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
                      * line (except the last one) can have
                      * unprocessed data after the tokenization. */
                     fwrite(unprocessed_pointer, sizeof(char),
-                           strlen(unprocessed_pointer), o_fd);
+                           strlen(unprocessed_pointer), *o_fd);
                 }
             }
         }
@@ -647,7 +773,7 @@ int32_t process_input(FILE *i_fd, FILE *o_fd,
         read_code = read_line(&buffer, i_fd);
     }
 
-    _free_process_data(&buffer, &line, &expansion);
+    _free_process_data(&buffer, &line, &expansion, &ifs);
 
     if (read_code < 0) { return read_code; }
     return 0;
@@ -787,7 +913,7 @@ int32_t cpreprocessor_start(struct CPreprocessor *const this) {
         output = stdout;
     }
 
-    process_input(input, output, this);
+    process_input(input, &output, this);
     close_file(input);
     close_file(output);
 

@@ -12,12 +12,11 @@
 #include <string.h>
 
 #include "error_handling.h"
-#include "types.h"
 
 /**
  * @brief A pair data structure, that stores two strings/char arrays
  */
-typedef struct _StringsPair {
+typedef struct StringsPair {
     string first;
     string second;
 } StringsPair;
@@ -29,7 +28,7 @@ typedef struct _StringsPair {
  * @param pair The pair of the two strings (pointer)
  * @return int32_t The return code (0 for no errors)
  */
-int32_t make_spair(string s1, string s2, StringsPair *pair);
+int32_t make_spair(string s1, string s2, struct StringsPair *pair);
 
 /**
  * @brief Copy-Construct a string pair from another
@@ -37,13 +36,13 @@ int32_t make_spair(string s1, string s2, StringsPair *pair);
  * @param p2 The target pair (pointer)
  * @return int32_t The return code (0 for no errors)
  */
-int32_t copy_spair(StringsPair source, StringsPair *target);
+int32_t copy_spair(struct StringsPair source, struct StringsPair *target);
 
 /**
  * @brief Free strings inside a pair
  * @param p The pair (pointer)
  * @return int32_t The return code (0 for no errors)
  */
-int32_t clear_spair(StringsPair *p);
+int32_t clear_spair(struct StringsPair *p);
 
 #endif

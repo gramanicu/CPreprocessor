@@ -8,11 +8,11 @@ EXE = so-cpp
 # Libraries information (build, components)
 # Compilation parameters
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89 -DDEBUG
+CFLAGS = -Wall -Wextra -pedantic -g -O2 -std=c89
 OBJS = src/main.o src/cpreprocessor.o src/pair.o src/list.o src/hashmap.o
 
 # Test arguments
-TEST_ARGS = -Isrc -I lib -DDEBUG -DDEBUG1=\"ON\" -D LINUX -D LINUX='"TRUE"' -oout.txt in.txt
+TEST_ARGS = -oout.txt in.txt
 
 # Code Styling
 CSFILES = src/*
@@ -55,3 +55,11 @@ clean:
 # Debuggin makefile
 print-% :
 	@echo $* = $($*)
+
+archive: clean beauty_req
+	zip -FSr CProcessor.zip ./src Makefile GNUmakefile README.md
+	@$(MAKE) -s beauty
+
+check: build
+	cp $(EXE) checker/
+	@$(MAKE) -s -C checker -f Makefile.checker

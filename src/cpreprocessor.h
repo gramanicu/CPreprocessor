@@ -8,11 +8,7 @@
 #ifndef CPREPROCESSOR_H
 #define CPREPROCESSOR_H
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "data.h"
-#include "error_handling.h"
+#include "hashmap.h"
 
 #define DELIMS "\t []{}<>=+-*/%!&|^.,:;()\\"
 #define BUFFER_SIZE 256

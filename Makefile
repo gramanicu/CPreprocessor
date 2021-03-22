@@ -10,28 +10,28 @@ EXE = so-cpp.exe
 # Compilation parameters
 CC = cl
 LINK = link
-CFLAGS = /nologo /W4 /MD /TC /D_CRT_SECURE_NO_DEPRECATE
-OBJS = src/main.obj src/cpreprocessor.obj src/pair.obj src/list.obj src/hashmap.obj
+CFLAGS = /nologo /W4 /MD /D_CRT_SECURE_NO_DEPRECATE
+OBJS =src/pair.obj src/list.obj src/hashmap.obj src/main.obj src/cpreprocessor.obj 
 
 # Build the program
 build: $(OBJS)
-	$(LINK) /out:$(EXE) $**
+	link /out:$(EXE) $**
 
 # Create the object files
 src/main.obj: src/main.c
-	$(CC) /Fe$@ /c src/main.c $(CFLAGS)
+	$(CC) $(CFLAGS) /Fo$@ /c src/main.c
 	
 src/cpreprocessor.obj: src/cpreprocessor.c
-	$(CC) /Fe$@ /c src/cpreprocessor.c $(CFLAGS)
+	$(CC) $(CFLAGS) /Fo$@ /c src/cpreprocessor.c
 	
 src/pair.obj: src/pair.c
-	$(CC) /Fe$@ /c src/pair.c $(CFLAGS)
+	$(CC) $(CFLAGS) /Fo$@ /c src/pair.c
 	
 src/list.obj: src/list.c
-	$(CC) /Fe$@ /c src/list.c $(CFLAGS)
+	$(CC) $(CFLAGS) /Fo$@ /c src/list.c
 	
 src/hashmap.obj: src/hashmap.c
-	$(CC) /Fe$@ /c src/hashmap.c $(CFLAGS)
+	$(CC) $(CFLAGS) /Fo$@ /c src/hashmap.c
 
 # Remove object files and executables
 clean:
