@@ -11,9 +11,9 @@
  * @brief Set the input file
  * @param this The processor
  * @param input The input file
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t set_input(struct CPreprocessor *const this, string input) {
+int set_input(CPreprocessor *const this, string input) {
     free(this->input);
     this->input = strcpy(calloc(1, strlen(input) + 1), input);
     if (this->input == NULL) {
@@ -30,9 +30,9 @@ int32_t set_input(struct CPreprocessor *const this, string input) {
  * @brief Set the output file
  * @param this The processor
  * @param output The output file
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t set_output(struct CPreprocessor *const this, string output) {
+int set_output(CPreprocessor *const this, string output) {
     free(this->output);
     this->output = strcpy(calloc(1, strlen(output) + 1), output);
     if (this->output == NULL) {
@@ -49,11 +49,11 @@ int32_t set_output(struct CPreprocessor *const this, string output) {
  * @brief Add a include path
  * @param this The preprocessor
  * @param new_include The new included path
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t add_include(struct CPreprocessor *const this, string new_include) {
-    u_int32_t id = this->_c_includes;
-    u_int32_t i;
+int add_include(CPreprocessor *const this, string new_include) {
+    int id = this->_c_includes;
+    int i;
     string *aux_buff;
 
     this->_c_includes++;
@@ -89,13 +89,13 @@ int32_t add_include(struct CPreprocessor *const this, string new_include) {
  * @brief Add a define to the list, in the key=value format
  * @param this The cpreprocessor
  * @param key_value The key_value (a string of the key=value format)
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t add_define(struct CPreprocessor *const this, string key_value) {
+int add_define(CPreprocessor *const this, string key_value) {
     string d_key;
     string d_value;
     StringsPair p;
-    int32_t ret_code;
+    int ret_code;
 
     d_key = strtok(key_value, "= ");
     d_value = strtok(NULL, "");
@@ -121,9 +121,9 @@ int32_t add_define(struct CPreprocessor *const this, string key_value) {
  * @param dest The result of the concatentation
  * @param first The first string
  * @param second The second string
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t concatentate(string *dest, string first, string second) {
+int concatentate(string *dest, string first, string second) {
     size_t len1, len2;
     string s1 = strcpy(calloc(strlen(first) + 1, 1), first);
     string s2 = strcpy(calloc(strlen(second) + 1, 1), second);
@@ -165,12 +165,12 @@ int32_t concatentate(string *dest, string first, string second) {
  * @param path The path to the input
  * @param fd The returned file descriptor
  * @param proc The preprocessor "object"
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t open_input(string path, FILE **fd, struct CPreprocessor *const proc) {
+int open_input(string path, FILE **fd, CPreprocessor *const proc) {
     /* Find the file. */
-    u_int32_t i;
-    int32_t ret_val;
+    int i;
+    int ret_val;
 
     if (strcmp(path, proc->input) == 0) {
         /* The input file must not be searched in the include directories */
@@ -230,10 +230,10 @@ int32_t open_input(string path, FILE **fd, struct CPreprocessor *const proc) {
 /**
  * @brief Close a file
  * @param fd The file descriptor of the file
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t close_file(FILE *fd) {
-    int32_t ret_code = fclose(fd);
+int close_file(FILE *fd) {
+    int ret_code = fclose(fd);
 
     if (ret_code != 0) {
         CERR(TRUE, "Couldn't close the file");
@@ -248,13 +248,13 @@ int32_t close_file(FILE *fd) {
  * account the line continuation character)
  * @param line The read line
  * @param input The input FILE
- * @return int32_t The return code (0 for EOF, 1 for Success, others for errors)
+ * @return int The return code (0 for EOF, 1 for Success, others for errors)
  */
-int32_t read_line(string *line, FILE *input) {
+int read_line(string *line, FILE *input) {
     string buffer = calloc(BUFFER_SIZE, sizeof(char));
     string line_start;
-    int32_t ret_code;
-    u_int8_t had_multi = FALSE;
+    int ret_code;
+    int had_multi = FALSE;
 
     free(*line);
     *line = calloc(BUFFER_SIZE, sizeof(char));
@@ -320,10 +320,10 @@ int32_t read_line(string *line, FILE *input) {
  * @param buffer The buffer used to store the original line
  * @param line The buffer for the line that will be tokenized
  * @param expansion The buffer for the expansion of a macro
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t _allocate_process_data(string *buffer, string *line, string *expansion,
-                               int8_t **ifs) {
+int _allocate_process_data(string *buffer, string *line, string *expansion,
+                           int **ifs) {
     *buffer = calloc(BUFFER_SIZE, sizeof(char));
     if (*buffer == NULL) {
         CERR(TRUE, "Couldn't allocate memory");
@@ -345,7 +345,7 @@ int32_t _allocate_process_data(string *buffer, string *line, string *expansion,
         return MALLOC_ERR;
     }
 
-    *ifs = calloc(BUFFER_SIZE, sizeof(int8_t));
+    *ifs = calloc(BUFFER_SIZE, sizeof(int));
     if (*ifs == NULL) {
         CERR(TRUE, "Couldn't allocate memory");
         free(*buffer);
@@ -363,10 +363,10 @@ int32_t _allocate_process_data(string *buffer, string *line, string *expansion,
  * @param buffer The buffer used to store the original line
  * @param line The buffer for the line that will be tokenized
  * @param expansion The buffer for the expansion of a macro
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t _free_process_data(string *buffer, string *line, string *expansion,
-                           int8_t **ifs) {
+int _free_process_data(string *buffer, string *line, string *expansion,
+                       int **ifs) {
     free(*buffer);
     free(*line);
     free(*expansion);
@@ -378,11 +378,11 @@ int32_t _free_process_data(string *buffer, string *line, string *expansion,
  * @brief Check if the key is defined
  * @param proc The processor that uses this function
  * @param key The key/word to search
- * @return int32_t The return code (0 - exists, 1 - doesn't exist, other -
+ * @return int The return code (0 - exists, 1 - doesn't exist, other -
  * error)
  */
-int32_t is_defined(struct CPreprocessor *const proc, string key) {
-    int32_t ret_code;
+int is_defined(CPreprocessor *const proc, string key) {
+    int ret_code;
     StringsPair pair;
 
     if (key == NULL) { return 1; }
@@ -410,7 +410,7 @@ int32_t is_defined(struct CPreprocessor *const proc, string key) {
 string simple_tok(string *source, string delims, string *delim) {
     size_t s_l, d_l;
     string start = *source;
-    u_int32_t i, j;
+    unsigned int i, j;
 
     if (*source == NULL) { return NULL; }
     s_l = strlen(*source);
@@ -436,11 +436,10 @@ string simple_tok(string *source, string delims, string *delim) {
  * @param proc The processor that uses this function
  * @param key The key/word to expand
  * @param expansion The result
- * @return int32_t The return code (1 for no expansion, 0 for success)
+ * @return int The return code (1 for no expansion, 0 for success)
  */
-int32_t _expand(struct CPreprocessor *const proc, string key,
-                string *expansion) {
-    int32_t ret_code;
+int _expand(CPreprocessor *const proc, string key, string *expansion) {
+    int ret_code;
     StringsPair pair;
     string value_start;
     string value;
@@ -508,11 +507,11 @@ int32_t _expand(struct CPreprocessor *const proc, string key,
  * @param proc The processor that uses this function
  * @param token The macro name
  * @param rest_of_line The arguments (if they exist)
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t _process_definitions(struct CPreprocessor *const proc, string token,
-                             string rest_of_line) {
-    int32_t ret_code = 0;
+int _process_definitions(CPreprocessor *const proc, string token,
+                         string rest_of_line) {
+    int ret_code = 0;
     if (strncmp(token, "#define", 7) == 0) {
         ret_code = add_define(proc, rest_of_line);
     } else if (strncmp(token, "#undef", 6) == 0) {
@@ -523,10 +522,10 @@ int32_t _process_definitions(struct CPreprocessor *const proc, string token,
     return 0;
 }
 
-int32_t _process_ifs(struct CPreprocessor *const proc, string token,
-                     string rest_of_line, int32_t *opened_ifs, int8_t **ifs) {
-    int32_t ret_code;
-    int32_t exist;
+int _process_ifs(CPreprocessor *const proc, string token, string rest_of_line,
+                 int *opened_ifs, int **ifs) {
+    int ret_code;
+    int exist;
     string expansion = calloc(BUFFER_SIZE, 1);
 
     if (expansion == NULL) {
@@ -571,10 +570,10 @@ int32_t _process_ifs(struct CPreprocessor *const proc, string token,
     return 0;
 }
 
-int32_t _process_elses(struct CPreprocessor *const proc, string token,
-                       string rest_of_line, int32_t *opened_ifs, int8_t **ifs) {
-    int32_t ret_code;
-    int32_t exist;
+int _process_elses(CPreprocessor *const proc, string token, string rest_of_line,
+                   int *opened_ifs, int **ifs) {
+    int ret_code;
+    int exist;
     string expansion = calloc(BUFFER_SIZE, 1);
 
     exist = is_defined(proc, rest_of_line);
@@ -619,8 +618,8 @@ int32_t _process_elses(struct CPreprocessor *const proc, string token,
     return 0;
 }
 
-int32_t _process_includes(struct CPreprocessor *const proc, string token,
-                          string rest_of_line, FILE **o_fd) {
+int _process_includes(CPreprocessor *const proc, string token,
+                      string rest_of_line, FILE **o_fd) {
     return 0;
 }
 
@@ -630,10 +629,9 @@ int32_t _process_includes(struct CPreprocessor *const proc, string token,
  * @param i_fd The input file descriptor
  * @param o_fd The output file descriptor
  * @param proc The preprocessor "object"
- * @return int32_t the return code
+ * @return int the return code
  */
-int32_t process_input(FILE *i_fd, FILE **o_fd,
-                      struct CPreprocessor *const proc) {
+int process_input(FILE *i_fd, FILE **o_fd, CPreprocessor *const proc) {
     string buffer;       /* Original read line */
     string line;         /* The "tokenizeable" line */
     string rest_of_line; /* Pointer to the rest of the line (after a token) */
@@ -642,15 +640,15 @@ int32_t process_input(FILE *i_fd, FILE **o_fd,
     string processed_pointer;   /* Pointer used to write unprocessed data */
     string before; /* Pointer for unprocessed data that needs to be written */
     string expansion; /* Pointer used to store the expansion of a token */
-    int32_t ret_code, read_code, offset;
-    int8_t *ifs;
-    int32_t opened_ifs = -1;
+    int ret_code, read_code, offset;
+    int *ifs;
+    int opened_ifs = -1;
 
     /* Init memory for buffers/arrays */
     ret_code = _allocate_process_data(&buffer, &line, &expansion, &ifs);
     if (ret_code != 0) { return ret_code; }
 
-    memset(ifs, FALSE, BUFFER_SIZE * sizeof(int8_t));
+    memset(ifs, FALSE, BUFFER_SIZE * sizeof(int));
 
     /* Read lines 1 by 1 */
     read_code = read_line(&buffer, i_fd);
@@ -784,13 +782,12 @@ int32_t process_input(FILE *i_fd, FILE **o_fd,
  * @param proc The preprocessor
  * @param argc The arguments count
  * @param argv The arguments vector
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t parse_arguments(struct CPreprocessor *const proc, u_int32_t argc,
-                        string argv[]) {
-    int32_t ret_code = 0;
-    u_int32_t i;
-    u_int8_t i_specified = 0;
+int parse_arguments(CPreprocessor *const proc, int argc, string argv[]) {
+    int ret_code = 0;
+    int i;
+    int i_specified = 0;
 
     for (i = 1; i < argc; ++i) {
         if (argv[i][0] == '-') {
@@ -835,9 +832,9 @@ int32_t parse_arguments(struct CPreprocessor *const proc, u_int32_t argc,
     return ret_code;
 }
 
-int32_t cpreprocessor_clear(struct CPreprocessor *const this) {
-    u_int32_t i;
-    int32_t ret_code = 0;
+int cpreprocessor_clear(CPreprocessor *const this) {
+    int i;
+    int ret_code = 0;
     ret_code = this->map.clear(&this->map);
     free(this->input);
     free(this->output);
@@ -848,10 +845,9 @@ int32_t cpreprocessor_clear(struct CPreprocessor *const this) {
     return ret_code;
 }
 
-int32_t cpreprocessor_init(struct CPreprocessor *const this, u_int32_t argc,
-                           string argv[]) {
+int cpreprocessor_init(CPreprocessor *const this, int argc, string argv[]) {
     Hashmap new_map = INIT_HASHMAP;
-    int32_t ret_code = 0;
+    int ret_code = 0;
 
     /* Allocate all the memory */
     this->_c_includes = 0;
@@ -886,9 +882,9 @@ int32_t cpreprocessor_init(struct CPreprocessor *const this, u_int32_t argc,
     return ret_code;
 }
 
-int32_t cpreprocessor_start(struct CPreprocessor *const this) {
-    u_int32_t i;
-    int32_t ret_code;
+int cpreprocessor_start(CPreprocessor *const this) {
+    int i;
+    int ret_code;
     FILE *input, *output;
 
     if (this->_in_set == TRUE) {

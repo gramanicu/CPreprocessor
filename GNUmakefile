@@ -24,6 +24,7 @@ MFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
 build: $(OBJS)
 	$(info Building executable...)
 	@$(CC) -o $(EXE) $^ $(CFLAGS)
+	rm $(OBJS)
 
 # Create the object files
 %.o: %.c

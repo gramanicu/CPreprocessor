@@ -1,12 +1,12 @@
 /**
- * @file types.h
+ * @file mytypes.h
  * @author Grama Nicolae (gramanicu@gmail.com)
  * @brief Defines different data types
  * @copyright Copyright (c) 2021
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef MYTYPES_H
+#define MYTYPES_H
 
 #include <sys/types.h>
 

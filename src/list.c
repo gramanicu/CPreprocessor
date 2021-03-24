@@ -10,10 +10,9 @@
 
 #include "list.h"
 
-int32_t pairlist_search(struct PairList *const this, string key,
-                        StringsPair *pair) {
+int pairlist_search(PairList *const this, string key, StringsPair *pair) {
     PairListElem *curr = this->_head;
-    int32_t ret_code;
+    int ret_code;
 
     if (this->_size == 0) {
         /* Return empty pair if the key is not found (empty list) */
@@ -41,10 +40,10 @@ int32_t pairlist_search(struct PairList *const this, string key,
     return 1;
 }
 
-int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
+int pairlist_push_back(PairList *const this, StringsPair pair) {
     PairListElem *new_node = calloc(1, sizeof(PairListElem));
     PairListElem *curr = this->_head;
-    int32_t ret_code;
+    int ret_code;
 
     if (new_node == NULL) {
         DEBUG_MSG("Error while creating a new node to push");
@@ -86,9 +85,9 @@ int32_t pairlist_push_back(struct PairList *const this, StringsPair pair) {
     return 0;
 }
 
-int32_t pairlist_remove(struct PairList *const this, string key) {
+int pairlist_remove(PairList *const this, string key) {
     PairListElem *curr = this->_head;
-    int32_t ret_code;
+    int ret_code;
 
     if (this->_size == 0) {
         /* Nothing to remove */
@@ -136,9 +135,9 @@ int32_t pairlist_remove(struct PairList *const this, string key) {
     return 1;
 }
 
-int32_t pairlist_clear(struct PairList *const this) {
+int pairlist_clear(PairList *const this) {
     PairListElem *curr = this->_head;
-    int32_t ret_code;
+    int ret_code;
 
     while (curr != NULL) {
         PairListElem *next = curr->next;
@@ -159,7 +158,7 @@ int32_t pairlist_clear(struct PairList *const this) {
     return 0;
 }
 
-int32_t pairlist_print(struct PairList *const this) {
+int pairlist_print(PairList *const this) {
     PairListElem *curr = this->_head;
 
     if (this->_size != 0) {

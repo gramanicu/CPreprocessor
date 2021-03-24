@@ -26,23 +26,23 @@ typedef struct StringsPair {
  * @param s1 First string
  * @param s2 Second string
  * @param pair The pair of the two strings (pointer)
- * @return int32_t The return code (0 for no errors)
+ * @return int The return code (0 for no errors)
  */
-int32_t make_spair(string s1, string s2, struct StringsPair *pair);
+int make_spair(string s1, string s2, StringsPair *pair);
 
 /**
  * @brief Copy-Construct a string pair from another
  * @param p1 The source pair (value)
  * @param p2 The target pair (pointer)
- * @return int32_t The return code (0 for no errors)
+ * @return int The return code (0 for no errors)
  */
-int32_t copy_spair(struct StringsPair source, struct StringsPair *target);
+int copy_spair(StringsPair source, StringsPair *target);
 
 /**
  * @brief Free strings inside a pair
  * @param p The pair (pointer)
- * @return int32_t The return code (0 for no errors)
+ * @return int The return code (0 for no errors)
  */
-int32_t clear_spair(struct StringsPair *p);
+int clear_spair(StringsPair *p);
 
 #endif

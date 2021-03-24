@@ -18,15 +18,14 @@ typedef struct CPreprocessor {
     string input;
     string output;
     string *includes;
-    u_int32_t _c_includes;
-    u_int8_t _in_set;
-    u_int8_t _out_set;
+    int _c_includes;
+    int _in_set;
+    int _out_set;
 
-    int32_t (*init)(struct CPreprocessor *const this, u_int32_t argc,
-                    string argv[]);
+    int (*init)(struct CPreprocessor *const this, int argc, string argv[]);
 
-    int32_t (*start)(struct CPreprocessor *const this);
-    int32_t (*clear)(struct CPreprocessor *const this);
+    int (*start)(struct CPreprocessor *const this);
+    int (*clear)(struct CPreprocessor *const this);
 } CPreprocessor;
 
 /**
@@ -35,23 +34,22 @@ typedef struct CPreprocessor {
  * @param this The "object" this functions is attached to
  * @param argc The arguments count
  * @param argv The arguments vector
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t cpreprocessor_init(struct CPreprocessor *const this, u_int32_t argc,
-                           string argv[]);
+int cpreprocessor_init(CPreprocessor *const this, int argc, string argv[]);
 
 /**
  * @brief Run the main logic behind the c preprocessor
  * @param this The "object" this functions is attached to
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t cpreprocessor_start(struct CPreprocessor *const this);
+int cpreprocessor_start(CPreprocessor *const this);
 
 /**
  * @brief Free the memory used by the processor
  * @param this The "object" this functions is attached to
- * @return int32_t The return code
+ * @return int The return code
  */
-int32_t cpreprocessor_clear(struct CPreprocessor *const this);
+int cpreprocessor_clear(CPreprocessor *const this);
 
 #endif

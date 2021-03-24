@@ -13,9 +13,9 @@
  * @param str The string to hash
  * @return unsigned long The hash
  */
-u_int64_t hash_djb2(string str) {
-    u_int64_t hash = 5381;
-    u_int32_t c;
+unsigned long hash_djb2(string str) {
+    unsigned long hash = 5381;
+    int c;
 
     while ((c = *str++)) {
         /* hash * 33 + c */
@@ -31,9 +31,9 @@ u_int64_t hash_djb2(string str) {
  * @param str The string to hash
  * @return unsigned long The hash
  */
-u_int64_t hash_sdbm(string str) {
-    u_int64_t hash = 0;
-    u_int32_t c;
+unsigned long hash_sdbm(string str) {
+    unsigned long hash = 0;
+    int c;
 
     while ((c = *str++)) { hash = c + (hash << 6) + (hash << 16) - hash; }
 
@@ -47,11 +47,11 @@ u_int64_t hash_sdbm(string str) {
  * (which took some time to create & refine, as it's not exactly an exact
  * science) it's the best I could do.
  * @param str The string to hash
- * @return u_int64_t The hash
+ * @return unsigned long The hash
  */
-u_int64_t hash_personal(string str) {
-    u_int64_t hash = 0;
-    u_int32_t c;
+unsigned long hash_personal(string str) {
+    unsigned long hash = 0;
+    int c;
 
     uchar op = 0;
 
@@ -76,9 +76,9 @@ u_int64_t hash_personal(string str) {
  * hashing functions. For the homework, it uses a simple (and bad) hashing
  * function I created.
  * @param src The string to hash
- * @return u_int64_t The hash
+ * @return unsigned long The hash
  */
-u_int64_t hash(string src) { return hash_personal(src); }
+unsigned long hash(string src) { return hash_personal(src); }
 
 /**
  * @brief Checks if the hashtable should have an increased size. As we insert
@@ -89,17 +89,17 @@ u_int64_t hash(string src) { return hash_personal(src); }
  of the number of buckets, the size of the array will quadruple". Also, when the
  array size is increased, the key-value pairs are redistributed.
  * @param this The hashmap this function is attached to
- * @return int32_t The return code (0 for no errors)
+ * @return int The return code (0 for no errors)
  */
-int32_t check_resize(struct Hashmap *const this) {
-    int32_t ret_code;
+int check_resize(Hashmap *const this) {
+    int ret_code;
 
     if ((float)this->_size / (float)this->_capacity >
         (float)HASHMAP_FILL_MAX / 100.0f) {
         /* The table needs to be increased */
-        u_int32_t i;
+        int i;
 
-        u_int32_t new_capacity = this->_capacity * HASHMAP_EXP_FACT;
+        int new_capacity = this->_capacity * HASHMAP_EXP_FACT;
         Bucket *new_buckets = calloc(new_capacity, sizeof(Bucket));
 
         /* Check if the malloc succeeded */
@@ -121,7 +121,7 @@ int32_t check_resize(struct Hashmap *const this) {
 
             while (curr != NULL) {
                 /* Compute the new hash */
-                u_int32_t new_id = hash(curr->data.first) % new_capacity;
+                int new_id = hash(curr->data.first) % new_capacity;
 
                 /* Insert into the new buckets */
                 ret_code = new_buckets[new_id].insert(&new_buckets[new_id],
@@ -147,8 +147,8 @@ int32_t check_resize(struct Hashmap *const this) {
     return 0;
 }
 
-int32_t hashmap_init(struct Hashmap *const this) {
-    u_int32_t i;
+int hashmap_init(Hashmap *const this) {
+    int i;
     this->_capacity = HASHMAP_SIZE_START;
     this->_size = 0;
     this->buckets = calloc(HASHMAP_SIZE_START, sizeof(Bucket));
@@ -168,9 +168,9 @@ int32_t hashmap_init(struct Hashmap *const this) {
     return 0;
 }
 
-int32_t hashmap_put(struct Hashmap *const this, StringsPair pair) {
-    u_int64_t id;
-    int32_t ret_code;
+int hashmap_put(Hashmap *const this, StringsPair pair) {
+    unsigned long id;
+    int ret_code;
 
     /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
@@ -199,9 +199,9 @@ int32_t hashmap_put(struct Hashmap *const this, StringsPair pair) {
     return 0;
 }
 
-int32_t hashmap_remove(struct Hashmap *const this, string key) {
-    u_int64_t id;
-    int32_t ret_code;
+int hashmap_remove(Hashmap *const this, string key) {
+    unsigned long id;
+    int ret_code;
 
     /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
@@ -224,9 +224,9 @@ int32_t hashmap_remove(struct Hashmap *const this, string key) {
     return 0;
 }
 
-int32_t hashmap_get(struct Hashmap *const this, string key, StringsPair *pair) {
-    u_int64_t id;
-    int32_t ret_code;
+int hashmap_get(Hashmap *const this, string key, StringsPair *pair) {
+    unsigned long id;
+    int ret_code;
 
     /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
@@ -252,9 +252,9 @@ int32_t hashmap_get(struct Hashmap *const this, string key, StringsPair *pair) {
     return 0;
 }
 
-int32_t hashmap_clear(struct Hashmap *const this) {
-    u_int32_t i;
-    int32_t ret_code;
+int hashmap_clear(Hashmap *const this) {
+    int i;
+    int ret_code;
 
     /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {
@@ -283,8 +283,8 @@ int32_t hashmap_clear(struct Hashmap *const this) {
     return 0;
 }
 
-int32_t hashmap_print(struct Hashmap *const this) {
-    u_int32_t i;
+int hashmap_print(Hashmap *const this) {
+    int i;
 
     /* Check if the hashmap is initialised */
     if (!this->_is_initialised) {

@@ -7,7 +7,7 @@
 
 #include "cpreprocessor.h"
 
-int32_t process_ret_code(int32_t ret_code) {
+int process_ret_code(int ret_code) {
     if (ret_code == MALLOC_ERR) { return -MALLOC_ERR; }
 
     return 0;
@@ -15,7 +15,7 @@ int32_t process_ret_code(int32_t ret_code) {
 
 int main(int argc, char *argv[]) {
     CPreprocessor p;
-    int32_t ret_code;
+    int ret_code;
 
     /* Couldn't create a init macro, so this must be done manually */
     p.init = cpreprocessor_init;

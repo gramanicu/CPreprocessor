@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "types.h"
+#include "mytypes.h"
 
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
